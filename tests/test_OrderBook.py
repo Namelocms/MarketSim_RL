@@ -1,5 +1,4 @@
 import unittest
-from queue import Empty
 from OrderBook.OrderBook import OrderBook
 from Order.Order import Order
 from Order.OrderAction import OrderAction
