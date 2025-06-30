@@ -1,30 +1,29 @@
 from queue import PriorityQueue
-import logging as log
+from multiprocessing import Manager
+import logging
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(message)s')
+log = logging.getLogger(__name__)
 
 from Order.OrderAction import OrderAction
 from Order.OrderStatus import OrderStatus
 
-''' TODO
-
-- Orders sorted 1st by price, 2nd by time placed (FIFO)
-    - Need to figure out a way to sort this simply, probably need to redo a bunch of functions to match this 
-        queue.put((order.price, order.time, order.vol, order.id))
-
-'''
 
 class OrderBook:
     '''
     Holds information for active ask and bid orders
+    - manager -> Multiproccessing manager for concurrency
     - bid_queue -> (-price, time, volume, id) [negated price so best bid is highest priority]
     - ask_queue -> (price, time, volume, id)
     - order_history -> {order_id: order}
     - agents -> {agent_id: agent}
     '''
     def __init__(self):
+        self.manager = Manager()
         self.bid_queue = PriorityQueue()
         self.ask_queue = PriorityQueue()
-        self.order_history = {}
-        self.agents = {}
+        self.order_history = self.manager.dict()
+        self.agents = self.manager.dict()
         
     def get_best(self, side):
         ''' Get the best active bid/ask limit order and remove it from the queue 
