@@ -9,13 +9,11 @@ class Agent:
     - id -> Agent's unique id
     - cash -> Amount of liquid cash available to the agent
     - holdings -> Current shares held and available to the agent -> {price: volume}
-    - manager -> Multiproccessing manager for concurrency
     '''
     def __init__(self, id, manager, cash=randint(10, 1000)):
         self.id = id
         self.cash = cash
         self.holdings = manager.dict()
-        self.manager = manager
 
     def update_cash(self, amt):
         ''' Update the cash holdings of this agent [Negative amt decreses cash] '''
