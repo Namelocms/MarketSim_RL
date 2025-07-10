@@ -14,6 +14,9 @@ class Agent:
         self.id = id
         self.cash = cash
         self.holdings = manager.dict()
+        self.active_asks = manager.dict()
+        self.active_bids = manager.dict()
+        self.history = manager.dict()
 
     def update_cash(self, amt):
         ''' Update the cash holdings of this agent [Negative amt decreses cash] '''
@@ -33,8 +36,24 @@ class Agent:
                 self.holdings.pop(price)
             else:
                 self.holdings[price] -= volume
+                if self.holdings[price] == 0:
+                    self.holdings.pop(price)
         except Exception as e:
-            log.error(f'ERROR: PRICE {price} DOES NOT EXIST')
+            log.error(f'ERROR: PRICE {price} DOES NOT EXIST: ERROR DETAILS: {e}')
+
+    def remove_holdings(self, volume):
+        ''' Remove the given volume of holdings starting from lowest value share '''
+        try:
+            while volume > 0 and len(self.holdings.keys()) > 0:
+                price, vol = self.get_lowest_value_share()
+                if vol > volume:
+                    self.remove_holding(price, volume)
+                    volume = 0
+                else:
+                    self.remove_holding(price)
+                    volume -= vol
+        except Exception as e:
+            log.error(f'ERROR: PRICE {price} DOES NOT EXIST: ERROR DETAILS: {e}')
 
     def get_highest_value_share(self):
         ''' Get the most valuble share and volume from agent's holdings
@@ -53,6 +72,13 @@ class Agent:
         lowest_price = min(self.holdings.keys())
         volume = self.holdings[lowest_price]
         return (lowest_price, volume)
+
+    def get_total_shares(self):
+        total_shares = 0
+        for holding in self.holdings.keys():
+            total_shares += self.holdings[holding]
+        
+        return total_shares
 
     def info(self):
         ''' Log information related to the agent to the console '''

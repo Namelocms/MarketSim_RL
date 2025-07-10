@@ -2,7 +2,6 @@ from queue import PriorityQueue
 from multiprocessing import Manager
 from time import time
 import logging
-# Configure logging
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 log = logging.getLogger(__name__)
 
@@ -16,6 +15,7 @@ class OrderBook:
     '''
     Holds information for active ask and bid orders
     - manager -> Multiproccessing manager for concurrency
+    - current_price -> Last sale price
     - bid_queue -> (-price, time, volume, id) [negated price so best bid is highest priority]
     - ask_queue -> (price, time, volume, id)
     - order_history -> {order_id: order}
@@ -29,11 +29,12 @@ class OrderBook:
     # Ticker Symbol
     SYMBOL_ID = 'COIN'
 
-    # PriorityQueue.get() function timeout(seconds) so there is no freezing when queue is empty
+    # PriorityQueue.get() function timeout(seconds) so there is minimal freezing when queue is empty
     TIMEOUT = 0.1
     
     def __init__(self):
         self.manager = Manager()
+        self.current_price = 1.00
         self.bid_queue = PriorityQueue()
         self.ask_queue = PriorityQueue()
         self.order_history = self.manager.dict()
@@ -166,22 +167,27 @@ class OrderBook:
 
     def _return_assets(self, order: Order):
         ''' Return an agent's assets to them after an order is canceled '''
+        # TODO: Implement the agent active orders dicts and history, not strictly in this function
         agent: Agent = self.agents[order.agent_id]
         match order.side:
             case OrderAction.BID:
                 agent.update_cash(order.price * order.volume)
+                agent.active_bids.pop(order.id)
+                agent.history[order.id] = order  # reassign order to push changes into multiprocessing dict
                 self.agents[agent.id] = agent
             case OrderAction.ASK:
                 agent.update_holdings(order.price, order.volume)
+                agent.active_asks.pop(order.id)
+                agent.history[order.id] = order  # reassign order to push changes into multiprocessing dict
                 self.agents[agent.id] = agent  # reassign agent to push changes into multiprocessing dict
             case _:
-                log.error(f'INVALID SIDE VALUE @ OrderBook._return_assets(order): {order.side.name}')
+                log.error(f'INVALID SIDE VALUE @ OrderBook._return_assets(order): {order.side}')
 
     def cancel_order(self, order_id: str):
         ''' Remove an order from the bid/ask queue, update the status to canceled, return assets if applicable'''
         order = self.order_history[order_id]
         order.status = OrderStatus.CANCELED
-        self.order_history[order.id] = order  # reassign order to update multiporcessing dict
+        self.order_history[order.id] = order  # reassign order to update multiprocessing dict
         self._remove_from_queue(order.side, order.id)
         self._return_assets(order)
 
@@ -250,9 +256,3 @@ class OrderBook:
 
         return ob_snapshot
                 
-    def match_order(self, order: Order):
-        ''' Match the order to active order(s) in the Order Book
-        - might want this to be a seperate class?
-        '''
-        # TODO
-        pass
