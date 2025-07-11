@@ -108,7 +108,7 @@ class NoiseAgent(Agent):
             side=OrderAction.ASK,
             type=OrderType.LIMIT
         )
-        self.active_bids[la_order.id] = la_order
+        self.active_asks[la_order.id] = la_order
         self.history[la_order.id] = la_order
         self.remove_holdings(chosen_vol)
         
