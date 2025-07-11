@@ -19,10 +19,10 @@ class NoiseAgent(Agent):
         if self.cash >= ob.current_price:
             available_actions.append(OrderAction.BID)
         
-        elif len(self.holdings.keys()) > 0:
+        if self.get_total_shares() > 0:
             available_actions.append(OrderAction.ASK)
         
-        elif len(self.active_asks.keys()) > 0 or len(self.active_bids.keys()) > 0:
+        if len(self.active_asks.keys()) > 0 or len(self.active_bids.keys()) > 0:
             available_actions.append(OrderAction.CANCEL)
 
         return random.choice(available_actions)
@@ -47,9 +47,7 @@ class NoiseAgent(Agent):
 
     def _execute_limit_bid(self, ob: OrderBook):
         ''' Choose random price and volume then make an order '''
-        perc_below = random.randint(0, 10)
-        perc_mod = random.random()
-        perc = perc_below + perc_mod
+        perc = random.uniform(0.0, self.max_price_deviation)
         amt_below = ob.current_price * perc
         chosen_val = ob.current_price - amt_below
         
@@ -75,6 +73,8 @@ class NoiseAgent(Agent):
 
     def _execute_market_ask(self, ob: OrderBook):
         ''' Choose a random volume to sell at current price and make an order '''
+        assert self.get_total_shares() > 0, "Attempted to place market ask with zero holdings"
+
         chosen_vol = random.randint(1, self.get_total_shares())
         
         ma_order = Order(
@@ -91,15 +91,14 @@ class NoiseAgent(Agent):
         return ma_order
 
     def _execute_limit_ask(self, ob: OrderBook):
-        # choose val
-        perc_above = random.randint(0, 10)
-        perc_mod = random.random()
-        perc = perc_above + perc_mod
+        assert self.get_total_shares() > 0, "Attempted to place limit ask with zero holdings"
+
+        perc = random.uniform(0.0, self.max_price_deviation)
         amt_above = ob.current_price * perc
         chosen_val = ob.current_price + amt_above
-        # choose vol
+        
         chosen_vol = random.randint(1, self.get_total_shares())
-        # make order
+        
         la_order = Order(
             id=ob.get_id('ORDER'),
             agent_id=self.id,
@@ -120,10 +119,10 @@ class NoiseAgent(Agent):
 
         match chosen_side:
             case OrderAction.BID:
-                chosen_order_id = random.choice(self.active_bids.keys())
+                chosen_order_id = random.choice(list(self.active_bids.keys()))
                 ob.cancel_order(chosen_order_id)
             case OrderAction.ASK:
-                chosen_order_id = random.choice(self.active_asks.keys())
+                chosen_order_id = random.choice(list(self.active_asks.keys()))
                 ob.cancel_order(chosen_order_id)
             case _:
                 pass

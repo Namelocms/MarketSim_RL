@@ -17,6 +17,7 @@ class Agent:
         self.active_asks = manager.dict()
         self.active_bids = manager.dict()
         self.history = manager.dict()
+        self.max_price_deviation = 0.025  # = x/100
 
     def update_cash(self, amt):
         ''' Update the cash holdings of this agent [Negative amt decreses cash] '''
