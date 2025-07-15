@@ -7,9 +7,11 @@ class TestAgent(unittest.TestCase):
     def test_agent_init(self):
         AGENT = Agent(1, Manager(), 100)
         self.assertEqual(AGENT.id, 1)
-        self.assertIsNotNone(AGENT.manager)
         self.assertEqual(AGENT.cash, 100)
         self.assertEqual(len(AGENT.holdings.keys()), 0)
+        self.assertEqual(len(AGENT.active_asks.keys()), 0)
+        self.assertEqual(len(AGENT.active_bids.keys()), 0)
+        self.assertEqual(len(AGENT.history.keys()), 0)
 
     def test_add_cash(self):
         AGENT = Agent(1, Manager(), 100)

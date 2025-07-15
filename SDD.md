@@ -69,7 +69,7 @@ action_space
 - Agent portfolio info
 
 #### Action Space:
-- Discrete or continuous action options:
+Discrete or continuous action options:
 - Place market order
 - Place limit order (at price X, size Y)
 - Cancel order

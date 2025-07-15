@@ -48,7 +48,7 @@ class NoiseAgent(Agent):
     def _execute_limit_bid(self, ob: OrderBook):
         ''' Choose random price and volume then make an order '''
         perc = random.uniform(0.0, self.max_price_deviation)
-        amt_below = ob.current_price * perc
+        amt_below = round(ob.current_price * perc, 2)
         chosen_val = ob.current_price - amt_below
         
         max_purchasable = int(self.cash / chosen_val)
@@ -94,7 +94,7 @@ class NoiseAgent(Agent):
         assert self.get_total_shares() > 0, "Attempted to place limit ask with zero holdings"
 
         perc = random.uniform(0.0, self.max_price_deviation)
-        amt_above = ob.current_price * perc
+        amt_above = round(ob.current_price * perc, 2)
         chosen_val = ob.current_price + amt_above
         
         chosen_vol = random.randint(1, self.get_total_shares())
@@ -115,15 +115,20 @@ class NoiseAgent(Agent):
 
     def _execute_cancel(self, ob: OrderBook):
         ''' Cancels a random order '''
-        chosen_side = random.choice([OrderAction.BID, OrderAction.ASK])
+        choices = []
+        if len(self.active_asks.keys()) > 0:
+            choices.append(OrderAction.ASK)
+        if len(self.active_bids.keys()) > 0:
+            choices.append(OrderAction.BID)
+        chosen_side = random.choice(choices)
 
         match chosen_side:
             case OrderAction.BID:
                 chosen_order_id = random.choice(list(self.active_bids.keys()))
-                ob.cancel_order(chosen_order_id)
+                ob.cancel_order(chosen_order_id, self)
             case OrderAction.ASK:
                 chosen_order_id = random.choice(list(self.active_asks.keys()))
-                ob.cancel_order(chosen_order_id)
+                ob.cancel_order(chosen_order_id, self)
             case _:
                 pass
 
@@ -131,7 +136,7 @@ class NoiseAgent(Agent):
         # Do nothing here?
         pass
     
-    def act(self, ob: OrderBook) -> Order:
+    def act(self, ob: OrderBook):
         ''' Perform random OrderAction '''
         action = self._get_action(ob)
         order_type = random.choice([OrderType.MARKET, OrderType.LIMIT])
@@ -140,18 +145,18 @@ class NoiseAgent(Agent):
             case OrderAction.BID:
                 match order_type:
                     case OrderType.MARKET:
-                        self._execute_market_bid(ob)
+                        return self._execute_market_bid(ob)
                     case OrderType.LIMIT:
-                        self._execute_limit_bid(ob)
+                        return self._execute_limit_bid(ob)
                     case _:
                         pass
 
             case OrderAction.ASK:
                 match order_type:
                     case OrderType.MARKET:
-                        self._execute_market_ask(ob)
+                        return self._execute_market_ask(ob)
                     case OrderType.LIMIT:
-                        self._execute_limit_ask(ob)
+                        return self._execute_limit_ask(ob)
                     case _:
                         pass
 

@@ -21,7 +21,7 @@ class Agent:
 
     def update_cash(self, amt):
         ''' Update the cash holdings of this agent [Negative amt decreses cash] '''
-        self.cash += amt
+        self.cash = round(self.cash + amt, 2)
 
     def update_holdings(self, price, volume):
         ''' Update/add a share in the agent's holdings '''
@@ -82,9 +82,16 @@ class Agent:
         return total_shares
 
     def info(self):
-        ''' Log information related to the agent to the console '''
-        log.info('=' * 50)
-        log.info(f'ID: {self.id}\nCASH: {self.cash}')
-        for price in self.holdings.keys():
-            log.info(f'SHARE: {self.holdings[price]} @ ${price}')
-        log.info('=' * 50)
+        return f"""
+=======================================================
+        ID: {self.id}
+        CASH: {self.cash}
+        HOLDINGS: {self.holdings}
+        ACTIVE_ASKS: {self.active_asks}
+        ACTIVE_BIDS: {self.active_bids}
+        HISTORY: 
+          {',  '.join(f'{key}: {value.info()}' for key, value in self.history.items())}
+        MAX_PRICE_DEVIATION: {self.max_price_deviation}
+=======================================================
+        """
+

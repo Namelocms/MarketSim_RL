@@ -80,13 +80,13 @@ class OrderBook:
                     best = self.bid_queue.get(timeout=self.TIMEOUT)
                     return (-best[0], best[1], best[2], best[3])  # negate price to positive value
                 except Exception as e:
-                    log.error(f'BID QUEUE IS EMPTY! RETURNING EMPTY TUPLE FROM OrderBook.get_best(side)! {e}')
+                    log.error(f'BID QUEUE IS EMPTY! RETURNING EMPTY TUPLE FROM OrderBook.get_best({side})! {e}')
                     return ()
             case OrderAction.ASK:
                 try:
                     return self.ask_queue.get(timeout=self.TIMEOUT)
                 except Exception as e:
-                    log.error(f'ASK QUEUE IS EMPTY! RETURNING EMPTY TUPLE FROM OrderBook.get_best(side)! {e}')
+                    log.error(f'ASK QUEUE IS EMPTY! RETURNING EMPTY TUPLE FROM OrderBook.get_best({side})! {e}')
                     return ()
             case _:
                 log.error(f'INVALID SIDE VALUE @ OrderBook.get_best(side): {side}')
@@ -143,7 +143,6 @@ class OrderBook:
                 while not self.bid_queue.empty():
                     o = self.get_best(side)
                     if o[3] == order_id:
-                        log.info(f'Order removed from bid_queue: {o}')
                         del o
                         break
                     else:
@@ -155,7 +154,6 @@ class OrderBook:
                 while not self.ask_queue.empty():
                     o = self.get_best(side)
                     if o[3] == order_id:
-                        log.info(f'Order removed from ask_queue: {o}')
                         del o
                         break
                     else:
@@ -165,31 +163,31 @@ class OrderBook:
             case _:
                 log.error(f'INVALID SIDE VALUE @ OrderBook._remove_from_queue(side, info_tuple, order_id): {side.name}')
 
-    def _return_assets(self, order: Order):
+    def _return_assets(self, order: Order, agent: Agent):
         ''' Return an agent's assets to them after an order is canceled '''
-        # TODO: Implement the agent active orders dicts and history, not strictly in this function
-        agent: Agent = self.agents[order.agent_id]
+        agent_ob: Agent = self.agents[order.agent_id]
         match order.side:
             case OrderAction.BID:
-                agent.update_cash(order.price * order.volume)
-                agent.active_bids.pop(order.id)
-                agent.history[order.id] = order  # reassign order to push changes into multiprocessing dict
-                self.agents[agent.id] = agent
+                agent.update_cash(order.price * order.volume)  # needed to update agent's cash outside of dict
+                agent_ob.update_cash(order.price * order.volume)
+                agent_ob.active_bids.pop(order.id)
+                agent_ob.history[order.id] = order  # reassign order to push changes into multiprocessing dict
+                self.agents[agent_ob.id] = agent_ob
             case OrderAction.ASK:
-                agent.update_holdings(order.price, order.volume)
-                agent.active_asks.pop(order.id)
-                agent.history[order.id] = order  # reassign order to push changes into multiprocessing dict
-                self.agents[agent.id] = agent  # reassign agent to push changes into multiprocessing dict
+                agent_ob.update_holdings(order.price, order.volume)
+                agent_ob.active_asks.pop(order.id)
+                agent_ob.history[order.id] = order  # reassign order to push changes into multiprocessing dict
+                self.agents[agent_ob.id] = agent_ob  # reassign agent to push changes into multiprocessing dict
             case _:
                 log.error(f'INVALID SIDE VALUE @ OrderBook._return_assets(order): {order.side}')
 
-    def cancel_order(self, order_id: str):
+    def cancel_order(self, order_id: str, agent: Agent):
         ''' Remove an order from the bid/ask queue, update the status to canceled, return assets if applicable'''
         order = self.order_history[order_id]
         order.status = OrderStatus.CANCELED
         self.order_history[order.id] = order  # reassign order to update multiprocessing dict
         self._remove_from_queue(order.side, order.id)
-        self._return_assets(order)
+        self._return_assets(order, agent)
 
     def get_snapshot(self, depth=10):
         '''

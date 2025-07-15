@@ -3,6 +3,7 @@ from OrderBook.OrderBook import OrderBook
 from Order.Order import Order
 from Order.OrderAction import OrderAction
 from Order.OrderStatus import OrderStatus
+from Order.OrderType import OrderType
 from Agent.Agent import Agent
 
 class TestOrderBook(unittest.TestCase):
@@ -38,10 +39,10 @@ class TestOrderBook(unittest.TestCase):
 
     def test_get_best_ask(self):
         ob = OrderBook()
-        o1 = Order(1, 1, 1.00, 10, OrderAction.ASK)
-        o2 = Order(2, 1, 1.10, 10, OrderAction.ASK)
-        o3 = Order(3, 1, 0.90, 10, OrderAction.ASK)
-        o4 = Order(4, 1, 1.00, 20, OrderAction.ASK)
+        o1 = Order(1, 1, 1.00, 10, OrderAction.ASK, OrderType.LIMIT)
+        o2 = Order(2, 1, 1.10, 10, OrderAction.ASK, OrderType.LIMIT)
+        o3 = Order(3, 1, 0.90, 10, OrderAction.ASK, OrderType.LIMIT)
+        o4 = Order(4, 1, 1.00, 20, OrderAction.ASK, OrderType.LIMIT)
 
         ob.ask_queue.put((o1.price, o1.timestamp, o1.volume, o1.id))
         ob.ask_queue.put((o2.price, o2.timestamp, o2.volume, o2.id))
@@ -58,10 +59,10 @@ class TestOrderBook(unittest.TestCase):
 
     def test_get_best_bid(self):
         ob = OrderBook()
-        o1 = Order(1, 1, 1.00, 10, OrderAction.BID)
-        o2 = Order(2, 1, 1.10, 10, OrderAction.BID)
-        o3 = Order(3, 1, 0.90, 10, OrderAction.BID)
-        o4 = Order(4, 1, 1.00, 20, OrderAction.BID)
+        o1 = Order(1, 1, 1.00, 10, OrderAction.BID, OrderType.LIMIT)
+        o2 = Order(2, 1, 1.10, 10, OrderAction.BID, OrderType.LIMIT)
+        o3 = Order(3, 1, 0.90, 10, OrderAction.BID, OrderType.LIMIT)
+        o4 = Order(4, 1, 1.00, 20, OrderAction.BID, OrderType.LIMIT)
 
         ob.bid_queue.put((-o1.price, o1.timestamp, o1.volume, o1.id))
         ob.bid_queue.put((-o2.price, o2.timestamp, o2.volume, o2.id))
@@ -78,14 +79,14 @@ class TestOrderBook(unittest.TestCase):
 
     def test_get_best_fail(self):
         ob = OrderBook()
-        o1 = Order(1, 1, 1.00, 10, OrderAction.ASK)
-        o2 = Order(2, 1, 1.10, 10, OrderAction.ASK)
-        o3 = Order(3, 1, 0.90, 10, OrderAction.ASK)
-        o4 = Order(4, 1, 1.00, 20, OrderAction.ASK)
-        o5 = Order(5, 1, 1.00, 10, OrderAction.BID)
-        o6 = Order(6, 1, 1.10, 10, OrderAction.BID)
-        o7 = Order(7, 1, 0.90, 10, OrderAction.BID)
-        o8 = Order(8, 1, 1.00, 20, OrderAction.BID)
+        o1 = Order(1, 1, 1.00, 10, OrderAction.ASK, OrderType.LIMIT)
+        o2 = Order(2, 1, 1.10, 10, OrderAction.ASK, OrderType.LIMIT)
+        o3 = Order(3, 1, 0.90, 10, OrderAction.ASK, OrderType.LIMIT)
+        o4 = Order(4, 1, 1.00, 20, OrderAction.ASK, OrderType.LIMIT)
+        o5 = Order(5, 1, 1.00, 10, OrderAction.BID, OrderType.LIMIT)
+        o6 = Order(6, 1, 1.10, 10, OrderAction.BID, OrderType.LIMIT)
+        o7 = Order(7, 1, 0.90, 10, OrderAction.BID, OrderType.LIMIT)
+        o8 = Order(8, 1, 1.00, 20, OrderAction.BID, OrderType.LIMIT)
 
         ob.ask_queue.put((o1.price, o1.timestamp, o1.volume, o1.id))
         ob.ask_queue.put((o2.price, o2.timestamp, o2.volume, o2.id))
@@ -108,10 +109,10 @@ class TestOrderBook(unittest.TestCase):
 
     def test_peek_best_ask(self):
         ob = OrderBook()
-        o1 = Order(1, 1, 1.00, 10, OrderAction.ASK)
-        o2 = Order(2, 1, 1.10, 10, OrderAction.ASK)
-        o3 = Order(3, 1, 0.90, 10, OrderAction.ASK)
-        o4 = Order(4, 1, 1.00, 20, OrderAction.ASK)
+        o1 = Order(1, 1, 1.00, 10, OrderAction.ASK, OrderType.LIMIT)
+        o2 = Order(2, 1, 1.10, 10, OrderAction.ASK, OrderType.LIMIT)
+        o3 = Order(3, 1, 0.90, 10, OrderAction.ASK, OrderType.LIMIT)
+        o4 = Order(4, 1, 1.00, 20, OrderAction.ASK, OrderType.LIMIT)
 
         ob.ask_queue.put((o1.price, o1.timestamp, o1.volume, o1.id))
         ob.ask_queue.put((o2.price, o2.timestamp, o2.volume, o2.id))
@@ -126,10 +127,10 @@ class TestOrderBook(unittest.TestCase):
 
     def test_peek_best_bid(self):
         ob = OrderBook()
-        o1 = Order(1, 1, 1.00, 10, OrderAction.BID)
-        o2 = Order(2, 1, 1.10, 10, OrderAction.BID)
-        o3 = Order(3, 1, 0.90, 10, OrderAction.BID)
-        o4 = Order(4, 1, 1.00, 20, OrderAction.BID)
+        o1 = Order(1, 1, 1.00, 10, OrderAction.BID, OrderType.LIMIT)
+        o2 = Order(2, 1, 1.10, 10, OrderAction.BID, OrderType.LIMIT)
+        o3 = Order(3, 1, 0.90, 10, OrderAction.BID, OrderType.LIMIT)
+        o4 = Order(4, 1, 1.00, 20, OrderAction.BID, OrderType.LIMIT)
 
         ob.bid_queue.put((-o1.price, o1.timestamp, o1.volume, o1.id))
         ob.bid_queue.put((-o2.price, o2.timestamp, o2.volume, o2.id))
@@ -144,14 +145,14 @@ class TestOrderBook(unittest.TestCase):
 
     def test_peek_best_fail(self):
         ob = OrderBook()
-        o1 = Order(1, 1, 1.00, 10, OrderAction.ASK)
-        o2 = Order(2, 1, 1.10, 10, OrderAction.ASK)
-        o3 = Order(3, 1, 0.90, 10, OrderAction.ASK)
-        o4 = Order(4, 1, 1.00, 20, OrderAction.ASK)
-        o5 = Order(5, 1, 1.00, 10, OrderAction.BID)
-        o6 = Order(6, 1, 1.10, 10, OrderAction.BID)
-        o7 = Order(7, 1, 0.90, 10, OrderAction.BID)
-        o8 = Order(8, 1, 1.00, 20, OrderAction.BID)
+        o1 = Order(1, 1, 1.00, 10, OrderAction.ASK, OrderType.LIMIT)
+        o2 = Order(2, 1, 1.10, 10, OrderAction.ASK, OrderType.LIMIT)
+        o3 = Order(3, 1, 0.90, 10, OrderAction.ASK, OrderType.LIMIT)
+        o4 = Order(4, 1, 1.00, 20, OrderAction.ASK, OrderType.LIMIT)
+        o5 = Order(5, 1, 1.00, 10, OrderAction.BID, OrderType.LIMIT)
+        o6 = Order(6, 1, 1.10, 10, OrderAction.BID, OrderType.LIMIT)
+        o7 = Order(7, 1, 0.90, 10, OrderAction.BID, OrderType.LIMIT)
+        o8 = Order(8, 1, 1.00, 20, OrderAction.BID, OrderType.LIMIT)
 
         b0 = ob.peek_best(OrderAction.ASK)
         b00 = ob.peek_best(OrderAction.BID)
@@ -180,7 +181,7 @@ class TestOrderBook(unittest.TestCase):
 
     def test_add_to_queue_ask(self):
         ob = OrderBook()
-        o1 = Order(1, 1, 1.00, 10, OrderAction.ASK)
+        o1 = Order(1, 1, 1.00, 10, OrderAction.ASK, OrderType.LIMIT)
         info_tuple = (o1.price, o1.timestamp, o1.volume, o1.id)
 
         ob._add_to_queue(o1.side, info_tuple)
@@ -189,7 +190,7 @@ class TestOrderBook(unittest.TestCase):
 
     def test_add_to_queue_bid(self):
         ob = OrderBook()
-        o1 = Order(1, 1, 1.00, 10, OrderAction.BID)
+        o1 = Order(1, 1, 1.00, 10, OrderAction.BID, OrderType.LIMIT)
         info_tuple = (-o1.price, o1.timestamp, o1.volume, o1.id)
 
         ob._add_to_queue(o1.side, info_tuple)
@@ -198,9 +199,9 @@ class TestOrderBook(unittest.TestCase):
 
     def test_add_to_queue_fail(self):
         ob = OrderBook()
-        o1 = Order(1, 1, 1.00, 10, OrderAction.ASK)
+        o1 = Order(1, 1, 1.00, 10, OrderAction.ASK, OrderType.LIMIT)
         info_tuple = (o1.price, o1.timestamp, o1.volume, o1.id)
-        o2 = Order(2, 1, 1.00, 10, OrderAction.BID)
+        o2 = Order(2, 1, 1.00, 10, OrderAction.BID, OrderType.LIMIT)
         info_tuple2 = (-o2.price, o2.timestamp, o2.volume, o2.id)
 
         ob._add_to_queue(OrderAction.HOLD, info_tuple)
@@ -215,7 +216,7 @@ class TestOrderBook(unittest.TestCase):
 
     def test_add_order_ask(self):
         ob = OrderBook()
-        o1 = Order(1, 1, 1.00, 10, OrderAction.ASK)
+        o1 = Order(1, 1, 1.00, 10, OrderAction.ASK, OrderType.LIMIT)
         info_tuple = (o1.price, o1.timestamp, o1.volume, o1.id)
 
         ob.add_order(o1)
@@ -225,7 +226,7 @@ class TestOrderBook(unittest.TestCase):
 
     def test_add_order_bid(self):
         ob = OrderBook()
-        o1 = Order(1, 1, 1.00, 10, OrderAction.BID)
+        o1 = Order(1, 1, 1.00, 10, OrderAction.BID, OrderType.LIMIT)
         info_tuple = (o1.price, o1.timestamp, o1.volume, o1.id)
 
         ob.add_order(o1)
@@ -235,10 +236,10 @@ class TestOrderBook(unittest.TestCase):
 
     def test_remove_from_queue_ask(self):
         ob = OrderBook()
-        o1 = Order(1, 1, 1.00, 10, OrderAction.ASK)
-        o2 = Order(2, 1, 1.10, 10, OrderAction.ASK)
-        o3 = Order(3, 1, 0.90, 10, OrderAction.ASK)
-        o4 = Order(4, 1, 1.00, 20, OrderAction.ASK)
+        o1 = Order(1, 1, 1.00, 10, OrderAction.ASK, OrderType.LIMIT)
+        o2 = Order(2, 1, 1.10, 10, OrderAction.ASK, OrderType.LIMIT)
+        o3 = Order(3, 1, 0.90, 10, OrderAction.ASK, OrderType.LIMIT)
+        o4 = Order(4, 1, 1.00, 20, OrderAction.ASK, OrderType.LIMIT)
 
         ob.ask_queue.put((o1.price, o1.timestamp, o1.volume, o1.id))
         ob.ask_queue.put((o2.price, o2.timestamp, o2.volume, o2.id))
@@ -255,10 +256,10 @@ class TestOrderBook(unittest.TestCase):
 
     def test_remove_from_queue_bid(self):
         ob = OrderBook()
-        o1 = Order(1, 1, 1.00, 10, OrderAction.BID)
-        o2 = Order(2, 1, 1.10, 10, OrderAction.BID)
-        o3 = Order(3, 1, 0.90, 10, OrderAction.BID)
-        o4 = Order(4, 1, 1.00, 20, OrderAction.BID)
+        o1 = Order(1, 1, 1.00, 10, OrderAction.BID, OrderType.LIMIT)
+        o2 = Order(2, 1, 1.10, 10, OrderAction.BID, OrderType.LIMIT)
+        o3 = Order(3, 1, 0.90, 10, OrderAction.BID, OrderType.LIMIT)
+        o4 = Order(4, 1, 1.00, 20, OrderAction.BID, OrderType.LIMIT)
 
         ob.bid_queue.put((-o1.price, o1.timestamp, o1.volume, o1.id))
         ob.bid_queue.put((-o2.price, o2.timestamp, o2.volume, o2.id))
@@ -279,10 +280,12 @@ class TestOrderBook(unittest.TestCase):
     def test_return_assets_ask(self):
         ob = OrderBook()
         a = Agent(1, ob.manager, 100)
-        o = Order(1, a.id, 1.00, 10, OrderAction.ASK)
+        o = Order(1, a.id, 1.00, 10, OrderAction.ASK, OrderType.LIMIT)
 
         ob.add_agent(a)
-        ob._return_assets(o)
+        a.active_asks[o.id] = o
+        a.history[o.id] = o
+        ob._return_assets(o, a)
 
         self.assertEqual(a.holdings[1.00], 10)
         self.assertEqual(a.cash, 100)
@@ -292,12 +295,14 @@ class TestOrderBook(unittest.TestCase):
     def test_return_assets_bid(self):
         ob = OrderBook()
         a = Agent(1, ob.manager, 100)
-        o = Order(1, a.id, 1.00, 10, OrderAction.BID)
+        o = Order(1, a.id, 1.00, 10, OrderAction.BID, OrderType.LIMIT)
 
         ob.add_agent(a)
-        ob._return_assets(o)
+        a.active_bids[o.id] = o
+        a.history[o.id] = o
+        ob._return_assets(o, a)
 
-        self.assertEqual(a.cash, 100)
+        self.assertEqual(a.cash, 110)
         self.assertEqual(len(ob.agents[a.id].holdings.keys()), 0)
         self.assertEqual(ob.agents[a.id].cash, 110)
 
@@ -307,11 +312,13 @@ class TestOrderBook(unittest.TestCase):
     def test_cancel_order_ask(self):
         ob = OrderBook()
         a = Agent(1, ob.manager, 100)
-        o = Order(1, a.id, 1.00, 10, OrderAction.ASK)
+        o = Order(1, a.id, 1.00, 10, OrderAction.ASK, OrderType.LIMIT)
 
         ob.add_agent(a)
+        a.active_asks[o.id] = o
+        a.history[o.id] = o
         ob.add_order(o)
-        ob.cancel_order(o.id)
+        ob.cancel_order(o.id, a)
 
         self.assertEqual(ob.order_history[o.id].status, OrderStatus.CANCELED)
         self.assertEqual((), ob.get_best(o.side))
@@ -320,11 +327,13 @@ class TestOrderBook(unittest.TestCase):
     def test_cancel_order_bid(self):
         ob = OrderBook()
         a = Agent(1, ob.manager, 100)
-        o = Order(1, a.id, 1.00, 10, OrderAction.BID)
+        o = Order(1, a.id, 1.00, 10, OrderAction.BID, OrderType.LIMIT)
 
         ob.add_agent(a)
+        a.active_bids[o.id] = o
+        a.history[o.id] = o
         ob.add_order(o)
-        ob.cancel_order(o.id)
+        ob.cancel_order(o.id, a)
 
         self.assertEqual(ob.order_history[o.id].status, OrderStatus.CANCELED)
         self.assertEqual((), ob.get_best(o.side))
@@ -335,14 +344,14 @@ class TestOrderBook(unittest.TestCase):
 
     def test_get_snapshot(self):
         ob = OrderBook()
-        o1 = Order(1, 1, 1.00, 10, OrderAction.BID)
-        o2 = Order(1, 2, 1.10, 10, OrderAction.ASK)
-        o3 = Order(3, 1, 0.90, 10, OrderAction.ASK)
-        o4 = Order(4, 1, 1.00, 20, OrderAction.ASK)
-        o5 = Order(5, 1, 1.00, 10, OrderAction.BID)
-        o6 = Order(6, 1, 1.10, 10, OrderAction.BID)
-        o7 = Order(7, 1, 0.90, 10, OrderAction.BID)
-        o8 = Order(8, 1, 1.00, 20, OrderAction.BID)
+        o1 = Order(1, 1, 1.00, 10, OrderAction.BID, OrderType.LIMIT)
+        o2 = Order(1, 2, 1.10, 10, OrderAction.ASK, OrderType.LIMIT)
+        o3 = Order(3, 1, 0.90, 10, OrderAction.ASK, OrderType.LIMIT)
+        o4 = Order(4, 1, 1.00, 20, OrderAction.ASK, OrderType.LIMIT)
+        o5 = Order(5, 1, 1.00, 10, OrderAction.BID, OrderType.LIMIT)
+        o6 = Order(6, 1, 1.10, 10, OrderAction.BID, OrderType.LIMIT)
+        o7 = Order(7, 1, 0.90, 10, OrderAction.BID, OrderType.LIMIT)
+        o8 = Order(8, 1, 1.00, 20, OrderAction.BID, OrderType.LIMIT)
 
         ob.add_order(o1)
         ob.add_order(o2)
