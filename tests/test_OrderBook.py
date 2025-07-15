@@ -10,11 +10,13 @@ class TestOrderBook(unittest.TestCase):
 
     def test_ob_init(self):
         ob = OrderBook()
+        ob2 = OrderBook()
         self.assertIsNotNone(ob.manager)
         self.assertIsNotNone(ob.bid_queue)
         self.assertIsNotNone(ob.ask_queue)
         self.assertIsNotNone(ob.order_history)
         self.assertIsNotNone(ob.agents)
+        self.assertIs(ob, ob2)
 
     def test_get_id_agent(self):
         ob = OrderBook()

@@ -21,6 +21,9 @@ class OrderBook:
     - order_history -> {order_id: order}
     - agents -> {agent_id: agent}
     '''
+    # Singleton Instance
+    _instance = None
+
     # Order/Agent ID info
     next_order_num = 1
     next_agent_num = 1
@@ -31,14 +34,20 @@ class OrderBook:
 
     # PriorityQueue.get() function timeout(seconds) so there is minimal freezing when queue is empty
     TIMEOUT = 0.1
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
     
     def __init__(self):
-        self.manager = Manager()
-        self.current_price = 1.00
-        self.bid_queue = PriorityQueue()
-        self.ask_queue = PriorityQueue()
-        self.order_history = self.manager.dict()
-        self.agents = self.manager.dict()
+        if not hasattr(self, '_initialized'):
+            self.manager = Manager()
+            self.current_price = 1.00
+            self.bid_queue = PriorityQueue()
+            self.ask_queue = PriorityQueue()
+            self.order_history = self.manager.dict()
+            self.agents = self.manager.dict()
 
     def get_id(self, id_type):
         new_id = ''
