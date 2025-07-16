@@ -56,6 +56,18 @@ class Agent:
         except Exception as e:
             log.error(f'ERROR: PRICE {price} DOES NOT EXIST: ERROR DETAILS: {e}')
 
+    def upsert_active_ask(self, order):
+        self.active_asks[order.id] = order
+
+    def upsert_active_bids(self, order):
+        self.active_bids[order.id] = order
+
+    def remove_active_ask(self, order_id):
+        self.active_asks.pop(order_id)
+
+    def remove_active_bid(self, order_id):
+        self.active_bids.pop(order_id)
+
     def get_highest_value_share(self):
         ''' Get the most valuble share and volume from agent's holdings
         

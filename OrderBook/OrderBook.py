@@ -21,9 +21,6 @@ class OrderBook:
     - order_history -> {order_id: order}
     - agents -> {agent_id: agent}
     '''
-    # Singleton Instance
-    _instance = None
-
     # Order/Agent ID info
     next_order_num = 1
     next_agent_num = 1
@@ -34,6 +31,9 @@ class OrderBook:
 
     # PriorityQueue.get() function timeout(seconds) so there is minimal freezing when queue is empty
     TIMEOUT = 0.1
+
+    # Singleton Instance
+    _instance = None
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
@@ -74,7 +74,7 @@ class OrderBook:
                 log.error(f'INVALID ID TYPE @ OrderBook.get_id(id_type): {id_type}')
                 return new_id
             
-    def add_agent(self, agent: Agent):
+    def upsert_agent(self, agent: Agent):
         self.agents[agent.id] = agent
         
     def get_best(self, side: OrderAction):
@@ -145,6 +145,8 @@ class OrderBook:
 
     def _remove_from_queue(self, side: OrderAction, order_id):
         ''' Remove an order tuple from the bid/ask queue '''
+
+        # TODO: Redo this to use the _find_order_in_queue function
         requeue = []
         match side:
             case OrderAction.BID:
@@ -170,14 +172,14 @@ class OrderBook:
                 for item in requeue:
                     self._add_to_queue(side, item)
             case _:
-                log.error(f'INVALID SIDE VALUE @ OrderBook._remove_from_queue(side, info_tuple, order_id): {side.name}')
+                log.error(f'INVALID SIDE VALUE @ OrderBook._remove_from_queue(side, info_tuple, order_id): {side}')
 
     def _return_assets(self, order: Order, agent: Agent):
         ''' Return an agent's assets to them after an order is canceled '''
         agent_ob: Agent = self.agents[order.agent_id]
         match order.side:
             case OrderAction.BID:
-                agent.update_cash(order.price * order.volume)  # needed to update agent's cash outside of dict
+                agent.update_cash(order.price * order.volume)  # needed to update agent's cash outside of dict (TODO: Dont really need this if only accessing agents from dict)
                 agent_ob.update_cash(order.price * order.volume)
                 agent_ob.active_bids.pop(order.id)
                 agent_ob.history[order.id] = order  # reassign order to push changes into multiprocessing dict
@@ -192,11 +194,52 @@ class OrderBook:
 
     def cancel_order(self, order_id: str, agent: Agent):
         ''' Remove an order from the bid/ask queue, update the status to canceled, return assets if applicable'''
-        order = self.order_history[order_id]
+        order: Order = self.order_history[order_id]
         order.status = OrderStatus.CANCELED
         self.order_history[order.id] = order  # reassign order to update multiprocessing dict
         self._remove_from_queue(order.side, order.id)
         self._return_assets(order, agent)
+
+    def fill_order(self, order_id: str):
+        ''' Order was filled, remove from queue, update status to CLOSED '''
+        order: Order = self.order_history[order_id]
+        order.status = OrderStatus.CLOSED
+        self.order_history[order.id] = order
+        # self._remove_from_queue(order.side, order.id) # already been removed?
+
+    def partial_fill_order(self, order: Order, vol_filled: int):
+        order.volume -= vol_filled
+        order_tuple = (order.price, order.timestamp, order.volume, order.id)
+        self._add_to_queue(order.side, order_tuple)
+
+    def _find_order_in_queue(self, order_id) -> tuple:
+        order: Order = self.order_history[order_id]
+
+        requeue = []
+        match order.side:
+            case OrderAction.BID:
+                # Iterate through each order in the queue until matching order_id found
+                while not self.bid_queue.empty():
+                    o = self.get_best(order.side)
+                    if o[3] == order_id:
+                        return o
+                    else:
+                        requeue.append(o) 
+                # Requeue all orders without matching order_id
+                for item in requeue:
+                    self._add_to_queue(order.side, item)
+            case OrderAction.ASK:
+                while not self.ask_queue.empty():
+                    o = self.get_best(order.side)
+                    if o[3] == order_id:
+                        return o
+                    else:
+                        requeue.append(o)
+                for item in requeue:
+                    self._add_to_queue(order.side, item)
+            case _:
+                log.error(f'INVALID SIDE VALUE @ OrderBook._remove_from_queue(side, info_tuple, order_id): {order.side}')
+                return ()
 
     def get_snapshot(self, depth=10):
         '''
