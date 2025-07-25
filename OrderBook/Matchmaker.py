@@ -31,31 +31,34 @@ class MatchMaker:
             aa_order: Order = aa.history[best_ask_oid]
             
             if aa_order.volume <= order.volume:
-                aa.update_cash(aa_order.volume * aa_order.price)
+                aa_order_total_value = round(aa_order.volume * aa_order.price, 2)
+                aa.update_cash(aa_order_total_value)
                 aa.remove_active_ask(aa_order.id)
                 aa_order.status = OrderStatus.CLOSED
                 aa.history[aa_order.id] = aa_order
 
                 ba.update_holdings(aa_order.price, aa_order.volume)
-                ba.update_cash(-aa_order.price * aa_order.volume)
+                ba.update_cash(-aa_order_total_value)
 
                 order.volume = round(order.volume - aa_order.volume, 2)
 
                 ob.fill_order(aa_order)
-                
+                ob.current_price = aa_order.price
                 ob.upsert_agent(ba)
                 ob.upsert_agent(aa)
  
             else:
-                aa.update_cash(aa_order.price * order.volume)
+                order_total_value = round(order.volume * aa_order.price, 2)
+                aa.update_cash(order_total_value)
                 aa.upsert_active_ask(aa_order)
                 
                 ba.update_holdings(aa_order.price, order.volume)
-                ba.update_cash(-aa_order.price * order.volume)
+                ba.update_cash(-order_total_value)
                 order.status = OrderStatus.CLOSED
                 ba.history[order.id] = order
                 
                 ob.partial_fill_order(aa_order, order.volume)
+                ob.current_price = aa_order.price
                 ob.upsert_agent(ba)
                 ob.upsert_agent(aa)
 
@@ -91,31 +94,34 @@ class MatchMaker:
             aa_order: Order = aa.history[best_ask_oid]
 
             if aa_order.volume <= order.volume:
-                aa.update_cash(aa_order.volume * aa_order.price)
+                aa_order_total_value = round(aa_order.volume * aa_order.price, 2)
+                aa.update_cash(aa_order_total_value)
                 aa.remove_active_ask(aa_order.id)
                 aa_order.status = OrderStatus.CLOSED
                 aa.history[aa_order.id] = aa_order
 
                 ba.update_holdings(aa_order.price, aa_order.volume)
-                ba.update_cash(-aa_order.price * aa_order.volume)
+                #ba.update_cash(-aa_order_total_value)
 
                 order.volume = round(order.volume - aa_order.volume, 2)
 
                 ob.fill_order(aa_order)
-                
+                ob.current_price = aa_order.price
                 ob.upsert_agent(ba)
                 ob.upsert_agent(aa)
 
             else:
-                aa.update_cash(aa_order.price * order.volume)
+                order_total_value = round(order.volume * aa_order.price, 2)
+                aa.update_cash(order_total_value)
                 aa.upsert_active_ask(aa_order)
 
                 ba.update_holdings(aa_order.price, order.volume)
-                ba.update_cash(-aa_order.price * order.volume)
+                #ba.update_cash(-order_total_value)
                 order.status = OrderStatus.CLOSED
                 ba.history[order.id] = order
 
                 ob.partial_fill_order(aa_order, order.volume)
+                ob.current_price = aa_order.price
                 ob.upsert_agent(ba)
                 ob.upsert_agent(aa)
 
@@ -153,7 +159,8 @@ class MatchMaker:
             ba_order: Order = ba.history[best_bid_oid]
 
             if ba_order.volume <= order.volume:
-                aa.update_cash(ba_order.volume * ba_order.price)
+                ba_order_total_value = round(ba_order.volume * ba_order.price, 2)
+                aa.update_cash(ba_order_total_value)
                 
                 ba.update_holdings(ba_order.price, ba_order.volume)
                 ba.remove_active_bid(ba_order.id)
@@ -163,17 +170,19 @@ class MatchMaker:
                 order.volume = round(order.volume - ba_order.volume, 2)
 
                 ob.fill_order(ba_order)
-
+                ob.current_price = ba_order.price
                 ob.upsert_agent(aa)
                 ob.upsert_agent(ba)
 
             else:
-                aa.update_cash(order.volume * ba_order.price)
+                order_total_value = round(order.volume * ba_order.price, 2)
+                aa.update_cash(order_total_value)
 
                 ba.update_holdings(ba_order.price, order.volume)
                 ba.history[ba_order.id] = ba_order
 
                 ob.partial_fill_order(ba_order, order.volume)
+                ob.current_price = ba_order.price
                 ob.upsert_agent(ba)
                 ob.upsert_agent(aa)
 
@@ -211,7 +220,8 @@ class MatchMaker:
             ba_order: Order = ba.history[best_bid_oid]
 
             if ba_order.volume <= order.volume:
-                aa.update_cash(ba_order.volume * ba_order.price)
+                ba_order_total_value = round(ba_order.volume * ba_order.price, 2)
+                aa.update_cash(ba_order_total_value)
                 
                 ba.update_holdings(ba_order.price, ba_order.volume)
                 ba.remove_active_bid(ba_order.id)
@@ -221,18 +231,20 @@ class MatchMaker:
                 order.volume = round(order.volume - ba_order.volume, 2)
                 
                 ob.fill_order(ba_order)
-
+                ob.current_price = ba_order.price
                 ob.upsert_agent(aa)
                 ob.upsert_agent(ba)
 
                 
             else:
-                aa.update_cash(order.volume * ba_order.price)
+                order_total_value = round(order.volume * ba_order.price, 2)
+                aa.update_cash(order_total_value)
 
                 ba.update_holdings(ba_order.price, order.volume)
                 ba.history[ba_order.id] = ba_order
 
                 ob.partial_fill_order(ba_order, order.volume)
+                ob.current_price = ba_order.price
                 ob.upsert_agent(ba)
                 ob.upsert_agent(aa)
 

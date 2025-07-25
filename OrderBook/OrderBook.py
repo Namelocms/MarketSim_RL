@@ -1,5 +1,4 @@
 from queue import PriorityQueue
-from multiprocessing import Manager
 from time import time
 import logging
 logging.basicConfig(level=logging.INFO, format='%(message)s')
@@ -40,14 +39,14 @@ class OrderBook:
             cls._instance = super().__new__(cls)
         return cls._instance
     
-    def __init__(self):
+    def __init__(self, initial_price=1.00):
         if not hasattr(self, '_initialized'):
-            self.manager = Manager()
-            self.current_price = 1.00
+            #self.manager = None#Manager()
+            self.current_price = initial_price
             self.bid_queue = PriorityQueue()
             self.ask_queue = PriorityQueue()
-            self.order_history = self.manager.dict()
-            self.agents = self.manager.dict()
+            self.order_history = {}#self.manager.dict()
+            self.agents = {}#self.manager.dict()
 
     def get_id(self, id_type):
         new_id = ''
@@ -86,14 +85,14 @@ class OrderBook:
         match side:
             case OrderAction.BID:
                 try:
-                    best = self.bid_queue.get(timeout=self.TIMEOUT)
+                    best = self.bid_queue.get_nowait()#(timeout=self.TIMEOUT)
                     return (-best[0], best[1], best[2], best[3])  # negate price to positive value
                 except Exception as e:
                     log.error(f'BID QUEUE IS EMPTY! RETURNING EMPTY TUPLE FROM OrderBook.get_best({side})! {e}')
                     return ()
             case OrderAction.ASK:
                 try:
-                    return self.ask_queue.get(timeout=self.TIMEOUT)
+                    return self.ask_queue.get_nowait()#(timeout=self.TIMEOUT)
                 except Exception as e:
                     log.error(f'ASK QUEUE IS EMPTY! RETURNING EMPTY TUPLE FROM OrderBook.get_best({side})! {e}')
                     return ()
@@ -182,15 +181,15 @@ class OrderBook:
                 agent.update_cash(order.price * order.volume)  # needed to update agent's cash outside of dict (TODO: Dont really need this if only accessing agents from dict)
                 agent_ob.update_cash(order.price * order.volume)
                 agent_ob.active_bids.pop(order.id)
-                agent_ob.history[order.id] = order  # reassign order to push changes into multiprocessing dict
+                agent_ob.history[order.id] = order  # reassign order to push changes into dict
                 self.agents[agent_ob.id] = agent_ob
             case OrderAction.ASK:
                 returnable_shares = order.get_returnable_shares()
                 for price, volume in returnable_shares:
                     agent_ob.update_holdings(price, volume)
                 agent_ob.active_asks.pop(order.id)
-                agent_ob.history[order.id] = order  # reassign order to push changes into multiprocessing dict
-                self.agents[agent_ob.id] = agent_ob  # reassign agent to push changes into multiprocessing dict
+                agent_ob.history[order.id] = order  # reassign order to push changes into dict
+                self.agents[agent_ob.id] = agent_ob  # reassign agent to push changes into dict
             case _:
                 log.error(f'INVALID SIDE VALUE @ OrderBook._return_assets(order): {order.side}')
 
@@ -198,7 +197,7 @@ class OrderBook:
         ''' Remove an order from the bid/ask queue, update the status to canceled, return assets if applicable'''
         order: Order = self.order_history[order_id]
         order.status = OrderStatus.CANCELED
-        self.order_history[order.id] = order  # reassign order to update multiprocessing dict
+        self.order_history[order.id] = order  # reassign order to update dict
         self._remove_from_queue(order.side, order.id)
         self._return_assets(order, agent)
 

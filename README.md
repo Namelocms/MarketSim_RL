@@ -9,20 +9,26 @@ DESCRIPTION
     ```
 - Make Agents and Add to OrderBook
     ```python
-    for x in range(10):
+    # Maker agent(s) maintain market liquidity (this will be its own Agent sub-class eventually)
+    MAKER_AGENT = NoiseAgent(id='MAKER', cash=10000)
+    MAKER_AGENT.update_holdings(price=ob.current_price, volume=100000000)
+    MAKER_AGENT.max_price_deviation = 0.001  # 0.001 * 100 = 0.1% max deviation +-
+    ob.upsert_agent(MAKER_AGENT)
+
+    # Add normal agents to the orderbook
+    NUM_AGENTS_IN_SIM = 100
+    for x in range(NUM_AGENTS_IN_SIM):
         na = NoiseAgent(
-            id = ob.get_id('AGENT'), 
-            manager = ob.manager,
+            id = ob.get_id('AGENT')
             cash = 100.00
         )
         # --OR--
         # For when you want to use a random cash amount $10 - $1000
         # Configurable in Agent parent class
             # na = NoiseAgent(
-            #     id = ob.get_id('AGENT'), 
-            #     manager = ob.manager
+            #     id = ob.get_id('AGENT')r
             # )
-        ob.add_agent(na)
+        ob.upsert_agent(na)
     ```
 - Execute Agent Actions and Match to other available orders
     ```python

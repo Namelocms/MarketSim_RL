@@ -43,6 +43,7 @@ class NoiseAgent(Agent):
         )
         
         self.history[mb_order.id] = mb_order
+        ob.upsert_agent(self)
         
         return mb_order
 
@@ -50,12 +51,12 @@ class NoiseAgent(Agent):
         ''' Choose random price and volume then make an order '''
         perc = random.uniform(0.0, self.max_price_deviation)
         amt_below = round(ob.current_price * perc, 2)
-        chosen_val = ob.current_price - amt_below
+        chosen_val = round(ob.current_price - amt_below, 2)
         
         max_purchasable = int(self.cash / chosen_val)
         chosen_vol = random.randint(1, max_purchasable)
 
-        total_value = chosen_val * chosen_vol
+        total_value = round(chosen_val * chosen_vol, 2)
         
         lb_order = Order(
             id=         ob.get_id('ORDER'),
@@ -66,10 +67,10 @@ class NoiseAgent(Agent):
             type=       OrderType.LIMIT
         )
         
-        self.active_bids[lb_order.id] = lb_order
         self.history[lb_order.id] = lb_order
         self.update_cash(-total_value)
-        
+        ob.upsert_agent(self)
+
         return lb_order
 
     def _execute_market_ask(self, ob: OrderBook):
@@ -86,10 +87,11 @@ class NoiseAgent(Agent):
             volume=         chosen_vol, 
             side=           OrderAction.ASK,
             type=           OrderType.MARKET,
-            removed_shares= removed_shares
+            reserved_shares= removed_shares
         )
         
         self.history[ma_order.id] = ma_order
+        ob.upsert_agent(self)
         
         return ma_order
 
@@ -98,7 +100,7 @@ class NoiseAgent(Agent):
 
         perc = random.uniform(0.0, self.max_price_deviation)
         amt_above = round(ob.current_price * perc, 2)
-        chosen_val = ob.current_price + amt_above
+        chosen_val = round(ob.current_price + amt_above, 2)
         
         chosen_vol = random.randint(1, self.get_total_shares())
         removed_shares = self.remove_holdings(chosen_vol)
@@ -110,11 +112,11 @@ class NoiseAgent(Agent):
             volume=         chosen_vol,
             side=           OrderAction.ASK,
             type=           OrderType.LIMIT,
-            removed_shares= removed_shares
+            reserved_shares= removed_shares
         )
         
-        self.active_asks[la_order.id] = la_order
         self.history[la_order.id] = la_order
+        ob.upsert_agent(self)
         
         return la_order
 

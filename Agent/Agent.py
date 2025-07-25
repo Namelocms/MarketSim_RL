@@ -10,13 +10,13 @@ class Agent:
     - cash -> Amount of liquid cash available to the agent
     - holdings -> Current shares held and available to the agent -> {price: volume}
     '''
-    def __init__(self, id, manager, cash=randint(10, 1000)):
+    def __init__(self, id, cash=randint(10, 1000)):
         self.id = id
         self.cash = cash
-        self.holdings = manager.dict()
-        self.active_asks = manager.dict()
-        self.active_bids = manager.dict()
-        self.history = manager.dict()
+        self.holdings = {}#manager.dict()
+        self.active_asks = {}#manager.dict()
+        self.active_bids = {}#manager.dict()
+        self.history = {}#manager.dict()
         self.max_price_deviation = 0.025  # = x/100
 
     def update_cash(self, amt):
