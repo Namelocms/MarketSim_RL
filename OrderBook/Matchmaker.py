@@ -7,101 +7,242 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 log = logging.getLogger(__name__)
 
-def match_market_bid(ob: OrderBook, order: Order):
-    # Bidding agent
-    ba_id = order.agent_id
-    ba: Agent = ob.agents[ba_id]
+class MatchMaker:
+    def match_market_bid(self, ob: OrderBook, order: Order):
+        assert(order.side is OrderAction.BID)
+        # Bidding agent
+        ba: Agent = ob.agents[order.agent_id]
 
-    while order.volume > 0 and ob.ask_queue.not_empty():
-        best_ask = ob.get_best(OrderAction.ASK)
-        if best_ask == (): 
-            log.error('BEST ASK IS EMPTY! @ MatchMaker.match_market_bid()')
-            pass
+        # Match until there are no more matches available or order volume is depleted
+        while order.volume > 0 and not ob.ask_queue.empty():
+            best_ask = ob.get_best(OrderAction.ASK)
+            if not best_ask: 
+                log.error('BEST ASK IS EMPTY! @ MatchMaker.match_market_bid()')
+                break
 
-        best_ask_price = best_ask[0]
-        best_ask_time = best_ask[1]
-        best_ask_volume = best_ask[2]
-        best_ask_oid = best_ask[3]
+            best_ask_price = best_ask[0]
+            best_ask_time = best_ask[1]
+            best_ask_volume = best_ask[2]
+            best_ask_oid = best_ask[3]
 
-        # Asking agent
-        aa_id = ob.order_history[best_ask_oid].agent_id
-        aa: Agent = ob.agents[aa_id]
-        aa_order: Order = aa.history[best_ask_oid]
-        
-        if aa_order.volume <= order.volume:
-            aa.update_cash(aa_order.volume * aa_order.price)
-            aa.remove_active_ask(aa_order.id)
-            aa_order.status = OrderStatus.CLOSED
-            aa.history[aa_order.id] = aa_order
-
-            ob[aa_id] = aa
-            ob.fill_order(aa_order.id)
-
-            ba.update_holdings(aa_order.price, aa_order.volume)
-            ba.update_cash(-aa_order.price * aa_order.volume)
+            # Asking agent
+            aa_id = ob.order_history[best_ask_oid].agent_id
+            aa: Agent = ob.agents[aa_id]
+            aa_order: Order = aa.history[best_ask_oid]
             
-            ob.upsert_agent(ba)
-            ob.upsert_agent(aa)
+            if aa_order.volume <= order.volume:
+                aa.update_cash(aa_order.volume * aa_order.price)
+                aa.remove_active_ask(aa_order.id)
+                aa_order.status = OrderStatus.CLOSED
+                aa.history[aa_order.id] = aa_order
 
-            order.volume -= aa_order.volume
-            
-        elif aa_order.volume > order.volume:
-            aa.update_cash(aa_order.price * order.volume)
-            aa.upsert_active_ask(aa_order)
+                ba.update_holdings(aa_order.price, aa_order.volume)
+                ba.update_cash(-aa_order.price * aa_order.volume)
 
-            ba.update_holdings(aa_order.price, order.volume)
-            ba.update_cash(-aa_order.price * order.volume)
+                order.volume = round(order.volume - aa_order.volume, 2)
+
+                ob.fill_order(aa_order)
+                
+                ob.upsert_agent(ba)
+                ob.upsert_agent(aa)
+ 
+            else:
+                aa.update_cash(aa_order.price * order.volume)
+                aa.upsert_active_ask(aa_order)
+                
+                ba.update_holdings(aa_order.price, order.volume)
+                ba.update_cash(-aa_order.price * order.volume)
+                order.status = OrderStatus.CLOSED
+                ba.history[order.id] = order
+                
+                ob.partial_fill_order(aa_order, order.volume)
+                ob.upsert_agent(ba)
+                ob.upsert_agent(aa)
+
+                order.volume = 0
+                
+        if order.volume > 0:
+            order.status = OrderStatus.CANCELED
+        else:
             order.status = OrderStatus.CLOSED
-            ba.history[order.id] = order
-            
-            ob.partial_fill_order(aa_order, order.volume)
-            ob.upsert_agent(ba)
-            ob.upsert_agent(aa)
-
-            order.volume = 0
-            
-    if order.volume > 0:
-        order.status = OrderStatus.CANCELED
+        
         ba.history[order.id] = order
         ob.upsert_agent(ba)
 
-def match_limit_bid(ob: OrderBook, order: Order):
-    # peek the best ask
-    # if best ask is <= bid price
-    # while there are asks <= bid price and order has volume
-        # get best ask
-        # subtract ask volume from bid 
-        # add money to asking agent
-        # subtract bid volume from ask
-        # add holdings to bidding agent
-        # peek best order to determine if next ask meets price threshold
-    # if order still has volume
-        # add order to ob.bid_queue
-        # update order in agent's active bids
-    pass
+    def match_limit_bid(self, ob: OrderBook, order: Order):
+        assert(order.side is OrderAction.BID)
+        # Bidding agent
+        ba: Agent = ob.agents[order.agent_id]
+        
+        while not ob.ask_queue.empty() and ob.peek_best(OrderAction.ASK)[0][0] <= order.price and order.volume > 0:
+            best_ask = ob.get_best(OrderAction.ASK)
+            if not best_ask: 
+                log.error('BEST ASK IS EMPTY! @ MatchMaker.match_limit_bid()')
+                break
 
-def match_market_ask(ob: OrderBook, order: Order):
-    # while order has volume and there are bids remaining in ob.bid_queue
-        # get best bid
-        # subtract bid volume from ask
-        # add money to asking agent
-        # subtract ask volume from bid
-        # add holdings to bidding agent
-    # if order still has volume
-        # cancel order and return holdings to asking agent
-    pass
+            best_ask_price = best_ask[0]
+            best_ask_time = best_ask[1]
+            best_ask_volume = best_ask[2]
+            best_ask_oid = best_ask[3]
 
-def match_limit_ask(ob: OrderBook, order: Order):
-    # peek best bid
-    # if best bid >= ask price
-    # while there are bids >= ask price and order has volume
-        # get best bid
-        # subtract bid volume from ask 
-        # add money to asking agent
-        # subtract ask volume from bid
-        # add holdings to bidding agent
-        # peek best order to determine if next bid meets price threshold
-    # if order still has volume
-        # add order to ob.ask_queue
-        # update order in agent's active asks
-    pass
+            # Asking agent
+            aa_id = ob.order_history[best_ask_oid].agent_id
+            aa: Agent = ob.agents[aa_id]
+            aa_order: Order = aa.history[best_ask_oid]
+
+            if aa_order.volume <= order.volume:
+                aa.update_cash(aa_order.volume * aa_order.price)
+                aa.remove_active_ask(aa_order.id)
+                aa_order.status = OrderStatus.CLOSED
+                aa.history[aa_order.id] = aa_order
+
+                ba.update_holdings(aa_order.price, aa_order.volume)
+                ba.update_cash(-aa_order.price * aa_order.volume)
+
+                order.volume = round(order.volume - aa_order.volume, 2)
+
+                ob.fill_order(aa_order)
+                
+                ob.upsert_agent(ba)
+                ob.upsert_agent(aa)
+
+            else:
+                aa.update_cash(aa_order.price * order.volume)
+                aa.upsert_active_ask(aa_order)
+
+                ba.update_holdings(aa_order.price, order.volume)
+                ba.update_cash(-aa_order.price * order.volume)
+                order.status = OrderStatus.CLOSED
+                ba.history[order.id] = order
+
+                ob.partial_fill_order(aa_order, order.volume)
+                ob.upsert_agent(ba)
+                ob.upsert_agent(aa)
+
+                order.volume = 0
+
+        if order.volume > 0:
+            ba.history[order.id] = order
+            ba.upsert_active_bid(order)
+            ob.upsert_agent(ba)
+            ob.add_order(order)
+        else:
+            order.status = OrderStatus.CLOSED
+            ba.history[order.id] = order
+            ob.upsert_agent(ba)
+
+    def match_market_ask(self, ob: OrderBook, order: Order):
+        assert(order.side is OrderAction.ASK)
+        # Asking agent
+        aa: Agent = ob.agents[order.agent_id]
+        
+        while order.volume > 0 and not ob.bid_queue.empty():
+            best_bid = ob.get_best(OrderAction.BID)
+            if not best_bid: 
+                log.error('BEST BID IS EMPTY! @ MatchMaker.match_market_ask()')
+                break
+
+            best_bid_price = best_bid[0]
+            best_bid_time = best_bid[1]
+            best_bid_volume = best_bid[2]
+            best_bid_oid = best_bid[3]
+
+            # Bidding agent
+            ba_id = ob.order_history[best_bid_oid].agent_id
+            ba: Agent = ob.agents[ba_id]
+            ba_order: Order = ba.history[best_bid_oid]
+
+            if ba_order.volume <= order.volume:
+                aa.update_cash(ba_order.volume * ba_order.price)
+                
+                ba.update_holdings(ba_order.price, ba_order.volume)
+                ba.remove_active_bid(ba_order.id)
+                ba_order.status = OrderStatus.CLOSED
+                ba.history[ba_order.id] = ba_order
+
+                order.volume = round(order.volume - ba_order.volume, 2)
+
+                ob.fill_order(ba_order)
+
+                ob.upsert_agent(aa)
+                ob.upsert_agent(ba)
+
+            else:
+                aa.update_cash(order.volume * ba_order.price)
+
+                ba.update_holdings(ba_order.price, order.volume)
+                ba.history[ba_order.id] = ba_order
+
+                ob.partial_fill_order(ba_order, order.volume)
+                ob.upsert_agent(ba)
+                ob.upsert_agent(aa)
+
+                order.volume = 0
+        if order.volume > 0:
+            order.status = OrderStatus.CANCELED
+            for price, volume in order.get_returnable_shares():
+                aa.update_holdings(price, volume)
+        else:
+            order.status = OrderStatus.CLOSED
+        
+        aa.history[order.id] = order
+        ob.upsert_agent(aa)
+
+    def match_limit_ask(self, ob: OrderBook, order: Order):
+        assert(order.side is OrderAction.ASK)
+
+        # Asking Agent
+        aa: Agent = ob.agents[order.agent_id]
+
+        while not ob.bid_queue.empty() and ob.peek_best(OrderAction.BID)[0][0] >= order.price and order.volume > 0:
+            best_bid = ob.get_best(OrderAction.BID)
+            if not best_bid: 
+                log.error('BEST BID IS EMPTY! @ MatchMaker.match_limit_ask()')
+                break
+            
+            best_bid_price = best_bid[0]
+            best_bid_time = best_bid[1]
+            best_bid_volume = best_bid[2]
+            best_bid_oid = best_bid[3]
+
+            # Bidding Agent
+            ba_id = ob.order_history[best_bid_oid].agent_id
+            ba: Agent = ob.agents[ba_id]
+            ba_order: Order = ba.history[best_bid_oid]
+
+            if ba_order.volume <= order.volume:
+                aa.update_cash(ba_order.volume * ba_order.price)
+                
+                ba.update_holdings(ba_order.price, ba_order.volume)
+                ba.remove_active_bid(ba_order.id)
+                ba_order.status = OrderStatus.CLOSED
+                ba.history[ba_order.id] = ba_order
+                
+                order.volume = round(order.volume - ba_order.volume, 2)
+                
+                ob.fill_order(ba_order)
+
+                ob.upsert_agent(aa)
+                ob.upsert_agent(ba)
+
+                
+            else:
+                aa.update_cash(order.volume * ba_order.price)
+
+                ba.update_holdings(ba_order.price, order.volume)
+                ba.history[ba_order.id] = ba_order
+
+                ob.partial_fill_order(ba_order, order.volume)
+                ob.upsert_agent(ba)
+                ob.upsert_agent(aa)
+
+                order.volume = 0
+        if order.volume > 0:
+            aa.history[order.id] = order
+            aa.upsert_active_ask(order)
+            ob.upsert_agent(aa)
+            ob.add_order(order)
+        else:
+            order.status = OrderStatus.CLOSED
+            aa.history[order.id] = order
+            ob.upsert_agent(aa)

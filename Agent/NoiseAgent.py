@@ -8,6 +8,7 @@ from Order.Order import Order
 from Order.OrderAction import OrderAction
 from Order.OrderType import OrderType
 from OrderBook.OrderBook import OrderBook
+from OrderBook.Matchmaker import MatchMaker
 
 class NoiseAgent(Agent):
     ''' Makes random actions based on it's available holdings, cash, and active orders '''
@@ -76,14 +77,16 @@ class NoiseAgent(Agent):
         assert self.get_total_shares() > 0, "Attempted to place market ask with zero holdings"
 
         chosen_vol = random.randint(1, self.get_total_shares())
-        
+        removed_shares = self.remove_holdings(chosen_vol)
+
         ma_order = Order(
-            id=         ob.get_id('ORDER'), 
-            agent_id=   self.id, 
-            price=      -1, 
-            volume=     chosen_vol, 
-            side=       OrderAction.ASK,
-            type=       OrderType.MARKET
+            id=             ob.get_id('ORDER'), 
+            agent_id=       self.id, 
+            price=          -1, 
+            volume=         chosen_vol, 
+            side=           OrderAction.ASK,
+            type=           OrderType.MARKET,
+            removed_shares= removed_shares
         )
         
         self.history[ma_order.id] = ma_order
@@ -98,18 +101,20 @@ class NoiseAgent(Agent):
         chosen_val = ob.current_price + amt_above
         
         chosen_vol = random.randint(1, self.get_total_shares())
-        
+        removed_shares = self.remove_holdings(chosen_vol)
+
         la_order = Order(
-            id=ob.get_id('ORDER'),
-            agent_id=self.id,
-            price=chosen_val,
-            volume=chosen_vol,
-            side=OrderAction.ASK,
-            type=OrderType.LIMIT
+            id=             ob.get_id('ORDER'),
+            agent_id=       self.id,
+            price=          chosen_val,
+            volume=         chosen_vol,
+            side=           OrderAction.ASK,
+            type=           OrderType.LIMIT,
+            removed_shares= removed_shares
         )
+        
         self.active_asks[la_order.id] = la_order
         self.history[la_order.id] = la_order
-        self.remove_holdings(chosen_vol)
         
         return la_order
 
@@ -138,6 +143,7 @@ class NoiseAgent(Agent):
     
     def act(self, ob: OrderBook):
         ''' Perform random OrderAction '''
+        mm = MatchMaker() 
         action = self._get_action(ob)
         order_type = random.choice([OrderType.MARKET, OrderType.LIMIT])
 
@@ -145,18 +151,22 @@ class NoiseAgent(Agent):
             case OrderAction.BID:
                 match order_type:
                     case OrderType.MARKET:
-                        return self._execute_market_bid(ob)
+                        ready_order = self._execute_market_bid(ob)
+                        mm.match_market_bid(ob, ready_order)
                     case OrderType.LIMIT:
-                        return self._execute_limit_bid(ob)
+                        ready_order = self._execute_limit_bid(ob)
+                        mm.match_limit_bid(ob, ready_order)
                     case _:
                         pass
 
             case OrderAction.ASK:
                 match order_type:
                     case OrderType.MARKET:
-                        return self._execute_market_ask(ob)
+                        ready_order = self._execute_market_ask(ob)
+                        mm.match_market_ask(ob, ready_order)
                     case OrderType.LIMIT:
-                        return self._execute_limit_ask(ob)
+                        ready_order = self._execute_limit_ask(ob)
+                        mm.match_limit_ask(ob, ready_order)
                     case _:
                         pass
 

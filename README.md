@@ -24,7 +24,7 @@ DESCRIPTION
             # )
         ob.add_agent(na)
     ```
-- Execute Agent Actions
+- Execute Agent Actions and Match to other available orders
     ```python
     for agent in ob.agents.values():
         agent.act(ob)

@@ -43,23 +43,27 @@ class Agent:
             log.error(f'ERROR: PRICE {price} DOES NOT EXIST: ERROR DETAILS: {e}')
 
     def remove_holdings(self, volume):
-        ''' Remove the given volume of holdings starting from lowest value share '''
+        ''' Remove the given volume of holdings starting from lowest value share, return the list of (price, volume) tuples of the removed shares '''
+        removed_shares = []
         try:
             while volume > 0 and len(self.holdings.keys()) > 0:
                 price, vol = self.get_lowest_value_share()
                 if vol > volume:
                     self.remove_holding(price, volume)
+                    removed_shares.append((price, volume))
                     volume = 0
                 else:
                     self.remove_holding(price)
+                    removed_shares.append((price, vol))
                     volume -= vol
         except Exception as e:
             log.error(f'ERROR: PRICE {price} DOES NOT EXIST: ERROR DETAILS: {e}')
+        return removed_shares
 
     def upsert_active_ask(self, order):
         self.active_asks[order.id] = order
 
-    def upsert_active_bids(self, order):
+    def upsert_active_bid(self, order):
         self.active_bids[order.id] = order
 
     def remove_active_ask(self, order_id):

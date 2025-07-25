@@ -185,7 +185,9 @@ class OrderBook:
                 agent_ob.history[order.id] = order  # reassign order to push changes into multiprocessing dict
                 self.agents[agent_ob.id] = agent_ob
             case OrderAction.ASK:
-                agent_ob.update_holdings(order.price, order.volume)
+                returnable_shares = order.get_returnable_shares()
+                for price, volume in returnable_shares:
+                    agent_ob.update_holdings(price, volume)
                 agent_ob.active_asks.pop(order.id)
                 agent_ob.history[order.id] = order  # reassign order to push changes into multiprocessing dict
                 self.agents[agent_ob.id] = agent_ob  # reassign agent to push changes into multiprocessing dict
@@ -200,17 +202,15 @@ class OrderBook:
         self._remove_from_queue(order.side, order.id)
         self._return_assets(order, agent)
 
-    def fill_order(self, order_id: str):
+    def fill_order(self, order: Order):
         ''' Order was filled, remove from queue, update status to CLOSED '''
-        order: Order = self.order_history[order_id]
         order.status = OrderStatus.CLOSED
+        order.volume = 0
         self.order_history[order.id] = order
-        # self._remove_from_queue(order.side, order.id) # already been removed?
 
     def partial_fill_order(self, order: Order, vol_filled: int):
         order.volume -= vol_filled
-        order_tuple = (order.price, order.timestamp, order.volume, order.id)
-        self._add_to_queue(order.side, order_tuple)
+        self.add_order(order)
 
     def _find_order_in_queue(self, order_id) -> tuple:
         order: Order = self.order_history[order_id]
@@ -221,20 +221,26 @@ class OrderBook:
                 # Iterate through each order in the queue until matching order_id found
                 while not self.bid_queue.empty():
                     o = self.get_best(order.side)
-                    if o[3] == order_id:
-                        return o
-                    else:
-                        requeue.append(o) 
+                    try:
+                        if o[3] == order_id:
+                            return o
+                        else:
+                            requeue.append(o) 
+                    except KeyError as e:
+                        log.error(f'KeyError: {e}')
                 # Requeue all orders without matching order_id
                 for item in requeue:
                     self._add_to_queue(order.side, item)
             case OrderAction.ASK:
                 while not self.ask_queue.empty():
                     o = self.get_best(order.side)
-                    if o[3] == order_id:
-                        return o
-                    else:
-                        requeue.append(o)
+                    try:
+                        if o[3] == order_id:
+                            return o
+                        else:
+                            requeue.append(o)
+                    except KeyError as e:
+                        log.error(f'KeyError: {e}')
                 for item in requeue:
                     self._add_to_queue(order.side, item)
             case _:
