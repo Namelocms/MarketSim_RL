@@ -1,5 +1,7 @@
-from App.test_integration import test_integration
-
+import tkinter as tk
+from App.GUI import OrderBookGUI
 
 if __name__ == '__main__':
-    test_integration()
+    root = tk.Tk()
+    app = OrderBookGUI(root)
+    root.mainloop()

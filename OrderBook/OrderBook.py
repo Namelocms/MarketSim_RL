@@ -88,13 +88,13 @@ class OrderBook:
                     best = self.bid_queue.get_nowait()#(timeout=self.TIMEOUT)
                     return (-best[0], best[1], best[2], best[3])  # negate price to positive value
                 except Exception as e:
-                    log.error(f'BID QUEUE IS EMPTY! RETURNING EMPTY TUPLE FROM OrderBook.get_best({side})! {e}')
+                    #log.error(f'BID QUEUE IS EMPTY! RETURNING EMPTY TUPLE FROM OrderBook.get_best({side})! {e}')
                     return ()
             case OrderAction.ASK:
                 try:
                     return self.ask_queue.get_nowait()#(timeout=self.TIMEOUT)
                 except Exception as e:
-                    log.error(f'ASK QUEUE IS EMPTY! RETURNING EMPTY TUPLE FROM OrderBook.get_best({side})! {e}')
+                    #log.error(f'ASK QUEUE IS EMPTY! RETURNING EMPTY TUPLE FROM OrderBook.get_best({side})! {e}')
                     return ()
             case _:
                 log.error(f'INVALID SIDE VALUE @ OrderBook.get_best(side): {side}')
