@@ -1,4 +1,3 @@
-from re import A
 from OrderBook.OrderBook import OrderBook
 from Agent.Agent import Agent
 from Order.Order import Order
