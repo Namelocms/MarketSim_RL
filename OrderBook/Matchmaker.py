@@ -11,7 +11,6 @@ log = logging.getLogger(__name__)
 class MatchMaker:
     def match_market_bid(self, ob: OrderBook, order: Order):
         assert(order.side is OrderAction.BID)
-        #requeue = []
         # Bidding agent
         ba: Agent = ob.agents[order.agent_id]
 
@@ -34,15 +33,6 @@ class MatchMaker:
             aa_id = ob.order_history[best_ask_oid].agent_id
             aa: Agent = ob.agents[aa_id]
             aa_order: Order = aa.history[best_ask_oid]
-
-            #log.info(f'MARKET BID: AA: {aa_id} || BA: {ba.id}')
-
-            ## Make sure agent does not trade with itself
-            #if aa_id == ba.id:
-            #    requeue.append(best_ask)  # Save to be requeued after the loop if completed or broken
-            #    continue
-            #
-            #log.info('PASSED CHECK')
 
             if aa_order.volume <= order.volume:
                 aa_order_total_value = round(aa_order.volume * aa_order.price, 2)
@@ -86,13 +76,8 @@ class MatchMaker:
         ba.history[order.id] = order
         ob.upsert_agent(ba)
 
-        # Requeue all the bidding agent's orders
-        #for item in requeue:
-        #    ob._add_to_queue(OrderAction.ASK, item)
-
     def match_limit_bid(self, ob: OrderBook, order: Order):
         assert(order.side is OrderAction.BID)
-        #requeue = []
         # Bidding agent
         ba: Agent = ob.agents[order.agent_id]
         
@@ -115,15 +100,6 @@ class MatchMaker:
             aa: Agent = ob.agents[aa_id]
             aa_order: Order = aa.history[best_ask_oid]
 
-            #log.info(f'LIMIT BID: AA: {aa_id} || BA: {ba.id}')
-
-            ## Make sure agent does not trade with itself
-            #if aa_id == ba.id:
-            #    requeue.append(best_ask)
-            #    continue
-#
-            #log.info('PASSED CHECK')
-
             if aa_order.volume <= order.volume:
                 aa_order_total_value = round(aa_order.volume * aa_order.price, 2)
                 aa.update_cash(aa_order_total_value)
@@ -132,7 +108,6 @@ class MatchMaker:
                 aa.history[aa_order.id] = aa_order
 
                 ba.update_holdings(aa_order.price, aa_order.volume)
-                #ba.update_cash(-aa_order_total_value)
 
                 order.volume = round(order.volume - aa_order.volume, 2)
 
@@ -167,14 +142,9 @@ class MatchMaker:
             order.status = OrderStatus.CLOSED
             ba.history[order.id] = order
             ob.upsert_agent(ba)
-        
-        # Requeue all the bidding agent's orders
-        #for item in requeue:
-        #    ob._add_to_queue(OrderAction.ASK, item)
 
     def match_market_ask(self, ob: OrderBook, order: Order):
         assert(order.side is OrderAction.ASK)
-        #requeue = []
         # Asking agent
         aa: Agent = ob.agents[order.agent_id]
         
@@ -196,15 +166,6 @@ class MatchMaker:
             ba_id = ob.order_history[best_bid_oid].agent_id
             ba: Agent = ob.agents[ba_id]
             ba_order: Order = ba.history[best_bid_oid]
-
-            #log.info(f'MARKET ASK: BA: {ba_id} || AA: {aa.id}')
-
-            ## Make sure agent does not trade with itself
-            #if ba_id == aa.id:
-            #    requeue.append(best_bid)
-            #    continue
-#
-            #log.info('PASSED CHECK')
 
             if ba_order.volume <= order.volume:
                 ba_order_total_value = round(ba_order.volume * ba_order.price, 2)
@@ -245,13 +206,8 @@ class MatchMaker:
         aa.history[order.id] = order
         ob.upsert_agent(aa)
 
-        ## Requeue all the asking agent's orders
-        #for item in requeue:
-        #    ob._add_to_queue(OrderAction.BID, item)
-
     def match_limit_ask(self, ob: OrderBook, order: Order):
         assert(order.side is OrderAction.ASK)
-        #requeue = []
         # Asking Agent
         aa: Agent = ob.agents[order.agent_id]
 
@@ -273,15 +229,6 @@ class MatchMaker:
             ba_id = ob.order_history[best_bid_oid].agent_id
             ba: Agent = ob.agents[ba_id]
             ba_order: Order = ba.history[best_bid_oid]
-
-            #log.info(f'MARKET ASK: BA: {ba_id} || AA: {aa.id}')
-
-            ## Make sure agent does not trade with itself
-            #if ba_id == aa.id:
-            #    requeue.append(best_bid)
-            #    continue
-            #
-            #log.info('PASSED CHECK')
 
             if ba_order.volume <= order.volume:
                 ba_order_total_value = round(ba_order.volume * ba_order.price, 2)
