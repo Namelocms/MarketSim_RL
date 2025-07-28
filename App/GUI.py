@@ -4,25 +4,27 @@ import threading
 import time
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from random import randint
 
 from OrderBook.OrderBook import OrderBook
 from Agent.NoiseAgent import NoiseAgent
 
 
 class OrderBookGUI:
-    def __init__(self, root):
+    def __init__(self, root, num_agents=100, start_price=1.00, maker_volume=19900000, maker_cash=1000):
         self.root = root
         self.root.title("Order Book GUI")
         self.sleep_time = 0.5
         self.after_time = int(self.sleep_time * 1000)
+        self.num_agents = num_agents
 
         # Initialize OrderBook
         self.ob = OrderBook()
-        self.ob.current_price = 1.00
+        self.ob.current_price = start_price
         self.prices = []
 
         # Setup agents
-        self.init_agents(num_agents=1000)
+        self.init_agents(num_agents=self.num_agents, maker_cash=maker_cash, maker_volume=maker_volume)
 
         # Tabs
         self.tab_control = ttk.Notebook(root)
@@ -67,13 +69,12 @@ class OrderBookGUI:
         self.tab_agents.configure(bg='#2e2e2e')
 
 
-    def init_agents(self, num_agents=100, maker_cash=10000, maker_volume=19900000):
+    def init_agents(self, num_agents, maker_cash, maker_volume):
         self.maker = NoiseAgent('MAKER', cash=maker_cash)
         self.maker.update_holdings(self.ob.current_price, maker_volume)
-        self.maker.max_price_deviation = 0.001
         self.ob.upsert_agent(self.maker)
         for _ in range(num_agents):
-            agent = NoiseAgent(self.ob.get_id('AGENT'))
+            agent = NoiseAgent(self.ob.get_id('AGENT'), randint(10, 1000))
             self.ob.upsert_agent(agent)
 
     def setup_chart(self):

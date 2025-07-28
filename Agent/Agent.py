@@ -1,7 +1,9 @@
-from random import randint
+from math import pi, sin, log
+from scipy.stats import beta
+from Order.OrderAction import OrderAction
 import logging
 logging.basicConfig(level=logging.INFO, format='%(message)s')
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 class Agent:
     ''' Base class for an agent
@@ -10,14 +12,14 @@ class Agent:
     - cash -> Amount of liquid cash available to the agent
     - holdings -> Current shares held and available to the agent -> {price: volume}
     '''
-    def __init__(self, id, cash=randint(10, 1000)):
+    def __init__(self, id, cash=100):
         self.id = id
         self.cash = cash
         self.holdings = {}#manager.dict()
         self.active_asks = {}#manager.dict()
         self.active_bids = {}#manager.dict()
         self.history = {}#manager.dict()
-        self.max_price_deviation = 0.025  # = x/100
+        #self.max_price_deviation = 0.025  # = x/100
 
     def update_cash(self, amt):
         ''' Update the cash holdings of this agent [Negative amt decreses cash] '''
@@ -40,7 +42,7 @@ class Agent:
                 if self.holdings[price] == 0:
                     self.holdings.pop(price)
         except Exception as e:
-            log.error(f'ERROR: PRICE {price} DOES NOT EXIST: ERROR DETAILS: {e}')
+            logger.error(f'ERROR: PRICE {price} DOES NOT EXIST: ERROR DETAILS: {e}')
 
     def remove_holdings(self, volume):
         ''' Remove the given volume of holdings starting from lowest value share, return the list of (price, volume) tuples of the removed shares '''
@@ -57,7 +59,7 @@ class Agent:
                     removed_shares.append((price, vol))
                     volume -= vol
         except Exception as e:
-            log.error(f'ERROR: PRICE {price} DOES NOT EXIST: ERROR DETAILS: {e}')
+            logger.error(f'ERROR: PRICE {price} DOES NOT EXIST: ERROR DETAILS: {e}')
         return removed_shares
 
     def upsert_active_ask(self, order):
@@ -97,6 +99,46 @@ class Agent:
         
         return total_shares
 
+    def _get_max_variance(self, price, scale=0.1, decay_rate=0.25, amplitude=0.1, frequency=pi*2):
+        '''
+        Get the max variance in price (how much the computed price will differ from passed price)
+
+        scale = Scale factor, controls the overall height of the curve\n
+        decay_rate = The power-law decay rate, larger decay_rate -> variance falls off faster as price increases\n
+        amplitude = The sinusoidal amplitude, controls how much the variance "wiggles" above/below the base curve. Set to 0 to disable sine behavior\n
+        frequency = The frequency of the sine (in log space), higher frequency -> more wiggles per log unit of price\n
+
+        PRICE__||  max_variance\n
+        0.1____||  0.17783\n
+        1______||  0.10000\n
+        10_____||  0.05623\n
+        100____||  0.03162\n
+        1000___||  0.01778\n
+        10000__||  0.01000\n
+        100000_||  0.00562
+        '''
+        return scale * (price ** -decay_rate) * (1 + (amplitude * sin(frequency * log(price))))
+
+
+    def _get_beta_price(self, current_price: float, side: OrderAction, a=2, b=5, epsilon = 1e-6):
+        ''' Can be shaped to hug the current price without reaching it: [a > b: hugs lower end || a < b: hugs upper end]\n
+            Has a nice distribution just a little past/before the current price is where most orders will be placed\n
+
+            a = Higher favors right side (larger x)\n
+            b = Higher favors left side (smaller x)\n
+            epsilon = Minimum possible price (for bids only)\n
+        '''
+        max_variance = self._get_max_variance(current_price)
+        match side:
+            case OrderAction.BID:
+                x = beta.rvs(a, b)
+                discount = x * max_variance
+                return max(current_price * (1 - discount), epsilon)
+            case OrderAction.ASK:
+                x = beta.rvs(a, b)
+                premium = x * max_variance
+                return current_price * (1 + premium)
+    
     def info(self):
         return f"""
 =======================================================
@@ -107,7 +149,6 @@ class Agent:
         ACTIVE_BIDS: {self.active_bids}
         HISTORY: 
           {',  '.join(f'{key}: {value.info()}' for key, value in self.history.items())}
-        MAX_PRICE_DEVIATION: {self.max_price_deviation}
 =======================================================
         """
 

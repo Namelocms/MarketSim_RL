@@ -49,9 +49,10 @@ class NoiseAgent(Agent):
 
     def _execute_limit_bid(self, ob: OrderBook):
         ''' Choose random price and volume then make an order '''
-        perc = random.uniform(0.0, self.max_price_deviation)
-        amt_below = round(ob.current_price * perc, 2)
-        chosen_val = round(ob.current_price - amt_below, 2)
+        #perc = random.uniform(0.0, self.max_price_deviation)
+        #amt_below = round(ob.current_price * perc, 2)
+        #chosen_val = round(ob.current_price - amt_below, 2)
+        chosen_val = self._get_beta_price(ob.current_price, OrderAction.BID)
         
         max_purchasable = int(self.cash / chosen_val)
         chosen_vol = random.randint(1, max_purchasable)
@@ -98,9 +99,10 @@ class NoiseAgent(Agent):
     def _execute_limit_ask(self, ob: OrderBook):
         assert self.get_total_shares() > 0, "Attempted to place limit ask with zero holdings"
 
-        perc = random.uniform(0.0, self.max_price_deviation)
-        amt_above = round(ob.current_price * perc, 2)
-        chosen_val = round(ob.current_price + amt_above, 2)
+        #perc = random.uniform(0.0, self.max_price_deviation)
+        #amt_above = round(ob.current_price * perc, 2)
+        #chosen_val = round(ob.current_price + amt_above, 2)
+        chosen_val = self._get_beta_price(ob.current_price, OrderAction.ASK)
         
         chosen_vol = random.randint(1, self.get_total_shares())
         removed_shares = self.remove_holdings(chosen_vol)
