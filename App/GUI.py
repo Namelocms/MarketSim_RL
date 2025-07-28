@@ -15,7 +15,7 @@ class OrderBookGUI:
         self.root = root
         self.root.title("Order Book GUI")
         self.sleep_time = 0.5
-        self.after_time = int(self.sleep_time * 1000)
+        self.after_time = 1000
         self.num_agents = num_agents
 
         # Initialize OrderBook
@@ -74,7 +74,7 @@ class OrderBookGUI:
         self.maker.update_holdings(self.ob.current_price, maker_volume)
         self.ob.upsert_agent(self.maker)
         for _ in range(num_agents):
-            agent = NoiseAgent(self.ob.get_id('AGENT'), randint(10, 1000))
+            agent = NoiseAgent(self.ob.get_id('AGENT'), 10)
             self.ob.upsert_agent(agent)
 
     def setup_chart(self):

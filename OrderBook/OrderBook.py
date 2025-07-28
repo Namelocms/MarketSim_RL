@@ -178,18 +178,17 @@ class OrderBook:
         agent_ob: Agent = self.agents[order.agent_id]
         match order.side:
             case OrderAction.BID:
-                agent.update_cash(order.price * order.volume)  # needed to update agent's cash outside of dict (TODO: Dont really need this if only accessing agents from dict)
-                agent_ob.update_cash(order.price * order.volume)
-                agent_ob.active_bids.pop(order.id)
-                agent_ob.history[order.id] = order  # reassign order to push changes into dict
-                self.agents[agent_ob.id] = agent_ob
+                agent.update_cash(order.price * order.volume)
+                agent.active_bids.pop(order.id)
+                agent.history[order.id] = order
+                self.agents[agent.id] = agent
             case OrderAction.ASK:
                 returnable_shares = order.get_returnable_shares()
                 for price, volume in returnable_shares:
-                    agent_ob.update_holdings(price, volume)
-                agent_ob.active_asks.pop(order.id)
-                agent_ob.history[order.id] = order  # reassign order to push changes into dict
-                self.agents[agent_ob.id] = agent_ob  # reassign agent to push changes into dict
+                    agent.update_holdings(price, volume)
+                agent.active_asks.pop(order.id)
+                agent.history[order.id] = order
+                self.agents[agent.id] = agent
             case _:
                 log.error(f'INVALID SIDE VALUE @ OrderBook._return_assets(order): {order.side}')
 

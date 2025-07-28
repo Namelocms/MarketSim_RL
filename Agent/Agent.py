@@ -15,11 +15,10 @@ class Agent:
     def __init__(self, id, cash=100):
         self.id = id
         self.cash = cash
-        self.holdings = {}#manager.dict()
-        self.active_asks = {}#manager.dict()
-        self.active_bids = {}#manager.dict()
-        self.history = {}#manager.dict()
-        #self.max_price_deviation = 0.025  # = x/100
+        self.holdings = {}
+        self.active_asks = {}
+        self.active_bids = {}
+        self.history = {}
 
     def update_cash(self, amt):
         ''' Update the cash holdings of this agent [Negative amt decreses cash] '''
@@ -118,7 +117,6 @@ class Agent:
         100000_||  0.00562
         '''
         return scale * (price ** -decay_rate) * (1 + (amplitude * sin(frequency * log(price))))
-
 
     def _get_beta_price(self, current_price: float, side: OrderAction, a=2, b=5, epsilon = 1e-6):
         ''' Can be shaped to hug the current price without reaching it: [a > b: hugs lower end || a < b: hugs upper end]\n
