@@ -12,12 +12,11 @@ def test_integration(num_agents=100, maker_agent_cash=10000, maker_agent_volume=
     # Maker Agent(s) (this will be its own Agent sub-class eventually)
     MAKER_AGENT = NoiseAgent('MAKER', cash=maker_agent_cash)
     MAKER_AGENT.update_holdings(ob.current_price, maker_agent_volume)
-    MAKER_AGENT.max_price_deviation = 0.001
     ob.upsert_agent(MAKER_AGENT)
 
     # Noise Agents
     for x in range(num_agents):
-        agent = NoiseAgent(ob.get_id('AGENT'))
+        agent = NoiseAgent(ob.get_id('AGENT'), cash=1)
         ob.upsert_agent(agent)
 
     # Run Sim
@@ -65,9 +64,7 @@ def test_integration(num_agents=100, maker_agent_cash=10000, maker_agent_volume=
                     total_just_agents = 0
                     start_time = time()
                     for agent in ob.agents.values():
-                        print(agent.id)
-                        print(agent.cash)
-                        print(agent.holdings)
+                        print(agent.info())
                         print(agent.get_total_shares())
                         print('===================================================')
                 case 4:

@@ -28,9 +28,6 @@ class OrderBook:
     # Ticker Symbol
     SYMBOL_ID = 'COIN'
 
-    # PriorityQueue.get() function timeout(seconds) so there is minimal freezing when queue is empty
-    TIMEOUT = 0.1
-
     # Singleton Instance
     _instance = None
 
@@ -41,12 +38,11 @@ class OrderBook:
     
     def __init__(self, initial_price=1.00):
         if not hasattr(self, '_initialized'):
-            #self.manager = None#Manager()
             self.current_price = initial_price
             self.bid_queue = PriorityQueue()
             self.ask_queue = PriorityQueue()
-            self.order_history = {}#self.manager.dict()
-            self.agents = {}#self.manager.dict()
+            self.order_history = {}
+            self.agents = {}
 
     def get_id(self, id_type):
         new_id = ''
@@ -181,14 +177,14 @@ class OrderBook:
                 agent.update_cash(order.price * order.volume)
                 agent.active_bids.pop(order.id)
                 agent.history[order.id] = order
-                self.agents[agent.id] = agent
+                self.upsert_agent(agent)
             case OrderAction.ASK:
                 returnable_shares = order.get_returnable_shares()
                 for price, volume in returnable_shares:
                     agent.update_holdings(price, volume)
                 agent.active_asks.pop(order.id)
                 agent.history[order.id] = order
-                self.agents[agent.id] = agent
+                self.upsert_agent(agent)
             case _:
                 log.error(f'INVALID SIDE VALUE @ OrderBook._return_assets(order): {order.side}')
 

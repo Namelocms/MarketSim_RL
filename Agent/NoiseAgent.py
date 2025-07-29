@@ -9,6 +9,7 @@ from Order.OrderAction import OrderAction
 from Order.OrderType import OrderType
 from OrderBook.OrderBook import OrderBook
 from OrderBook.Matchmaker import MatchMaker
+from Util.Util import Util
 
 class NoiseAgent(Agent):
     ''' Makes random actions based on it's available holdings, cash, and active orders '''
@@ -49,15 +50,12 @@ class NoiseAgent(Agent):
 
     def _execute_limit_bid(self, ob: OrderBook):
         ''' Choose random price and volume then make an order '''
-        #perc = random.uniform(0.0, self.max_price_deviation)
-        #amt_below = round(ob.current_price * perc, 2)
-        #chosen_val = round(ob.current_price - amt_below, 2)
         chosen_val = self._get_beta_price(ob.current_price, OrderAction.BID)
         
         max_purchasable = int(self.cash / chosen_val)
         chosen_vol = random.randint(1, max_purchasable)
 
-        total_value = round(chosen_val * chosen_vol, 2)
+        total_value = round(chosen_val * chosen_vol, Util.ROUND_NDIGITS)
         
         lb_order = Order(
             id=         ob.get_id('ORDER'),
@@ -99,9 +97,6 @@ class NoiseAgent(Agent):
     def _execute_limit_ask(self, ob: OrderBook):
         assert self.get_total_shares() > 0, "Attempted to place limit ask with zero holdings"
 
-        #perc = random.uniform(0.0, self.max_price_deviation)
-        #amt_above = round(ob.current_price * perc, 2)
-        #chosen_val = round(ob.current_price + amt_above, 2)
         chosen_val = self._get_beta_price(ob.current_price, OrderAction.ASK)
         
         chosen_vol = random.randint(1, self.get_total_shares())
@@ -176,11 +171,9 @@ class NoiseAgent(Agent):
 
             case OrderAction.CANCEL:
                 self._execute_cancel(ob)
-                pass
 
             case OrderAction.HOLD:
                 self._execute_hold(ob)
-                pass
 
             case _:
                 log.error(f'INVALID ACTION VALUE @ NoiseAgent.act(ob): {action}')

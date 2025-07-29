@@ -3,15 +3,17 @@ from tkinter import ttk
 import threading
 import time
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+
 from random import randint
 
 from OrderBook.OrderBook import OrderBook
 from Agent.NoiseAgent import NoiseAgent
+from Util.Util import Util
 
 
 class OrderBookGUI:
-    def __init__(self, root, num_agents=100, start_price=1.00, maker_volume=19900000, maker_cash=1000):
+    def __init__(self, root, num_agents=100, agent_cash=100, start_price=1.00, maker_volume=19900000, maker_cash=1000):
         self.root = root
         self.root.title("Order Book GUI")
         self.sleep_time = 0.5
@@ -24,7 +26,7 @@ class OrderBookGUI:
         self.prices = []
 
         # Setup agents
-        self.init_agents(num_agents=self.num_agents, maker_cash=maker_cash, maker_volume=maker_volume)
+        self.init_agents(num_agents=self.num_agents, agent_cash=agent_cash, maker_cash=maker_cash, maker_volume=maker_volume)
 
         # Tabs
         self.tab_control = ttk.Notebook(root)
@@ -69,12 +71,12 @@ class OrderBookGUI:
         self.tab_agents.configure(bg='#2e2e2e')
 
 
-    def init_agents(self, num_agents, maker_cash, maker_volume):
+    def init_agents(self, num_agents, agent_cash, maker_cash, maker_volume):
         self.maker = NoiseAgent('MAKER', cash=maker_cash)
         self.maker.update_holdings(self.ob.current_price, maker_volume)
         self.ob.upsert_agent(self.maker)
         for _ in range(num_agents):
-            agent = NoiseAgent(self.ob.get_id('AGENT'), 10)
+            agent = NoiseAgent(self.ob.get_id('AGENT'), agent_cash)
             self.ob.upsert_agent(agent)
 
     def setup_chart(self):
@@ -102,6 +104,50 @@ class OrderBookGUI:
         self.bid_tree.heading('Volume', text='Volume')
         self.bid_tree.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
+        # Button to show full price history
+        history_btn = tk.Button(self.tab_chart, text="Show Full Price History", command=self.show_full_history)
+        history_btn.pack(pady=5)
+        # Button to pause/resume simulation
+        self.pause_button = tk.Button(self.tab_chart, text="Pause", command=self.toggle_simulation)
+        self.pause_button.pack(pady=5)
+
+    def toggle_simulation(self):
+        self.running = not self.running
+        new_label = "Resume" if not self.running else "Pause"
+        self.pause_button.config(text=new_label)
+
+
+    def show_full_history(self):
+        # Create a new window
+        history_window = tk.Toplevel(self.root)
+        history_window.title("Full Price History")
+        history_window.configure(bg='#2e2e2e')
+
+        fig, ax = plt.subplots(figsize=(8, 4))
+        ax.set_facecolor('#1e1e1e')
+        fig.patch.set_facecolor('#2e2e2e')
+
+        ax.plot(self.prices, label='Price History', color='cyan')
+        ax.set_title("Full Price History", color='white')
+        ax.set_xlabel("Time Step", color='white')
+        ax.set_ylabel("Price", color='white')
+        ax.tick_params(colors='white')
+        ax.legend(facecolor='#1e1e1e', edgecolor='white')
+
+        # Create the canvas
+        canvas = FigureCanvasTkAgg(fig, master=history_window)
+        canvas_widget = canvas.get_tk_widget()
+        canvas_widget.pack(fill=tk.BOTH, expand=True)
+
+        # Add the navigation toolbar (zoom, pan, save, etc.)
+        toolbar_frame = tk.Frame(history_window)
+        toolbar_frame.pack(fill=tk.X)
+        toolbar = NavigationToolbar2Tk(canvas, toolbar_frame)
+        toolbar.update()
+
+        canvas.draw()
+
+
 
     def setup_agents_tab(self):
         self.agent_tree = ttk.Treeview(
@@ -116,11 +162,13 @@ class OrderBookGUI:
         self.agent_tree.pack(fill=tk.BOTH, expand=True)
 
     def run_simulation(self):
-        while self.running:
-            for agent in self.ob.agents.values():
-                agent.act(self.ob)
-            self.prices.append(self.ob.current_price)
+        while True:
+            if self.running:
+                for agent in self.ob.agents.values():
+                    agent.act(self.ob)
+                self.prices.append(self.ob.current_price)
             time.sleep(self.sleep_time)
+
 
     def update_gui(self):
         # Update chart
@@ -138,10 +186,10 @@ class OrderBookGUI:
         for i in self.agent_tree.get_children():
             self.agent_tree.delete(i)
         for agent in self.ob.agents.values():
-            holdings_str = ', '.join([f'{round(p, 2)}: {v}' for p, v in agent.holdings.items()])
+            holdings_str = ', '.join([f'{round(p, Util.ROUND_NDIGITS)}: {v}' for p, v in agent.holdings.items()])
             self.agent_tree.insert('', tk.END, values=(
                 agent.id,
-                round(agent.cash, 2),
+                round(agent.cash, Util.ROUND_NDIGITS),
                 holdings_str,
                 agent.get_total_shares()
             ))
@@ -153,9 +201,9 @@ class OrderBookGUI:
 
         snapshot = self.ob.get_snapshot(depth=10)[0]
         for ask in snapshot['asks']:
-            self.ask_tree.insert('', tk.END, values=(round(ask['price'], 4), ask['size']))
+            self.ask_tree.insert('', tk.END, values=(round(ask['price'], Util.ROUND_NDIGITS), ask['size']))
         for bid in snapshot['bids']:
-            self.bid_tree.insert('', tk.END, values=(round(bid['price'], 4), bid['size']))
+            self.bid_tree.insert('', tk.END, values=(round(bid['price'], Util.ROUND_NDIGITS), bid['size']))
 
 
         self.root.after(self.after_time, self.update_gui)

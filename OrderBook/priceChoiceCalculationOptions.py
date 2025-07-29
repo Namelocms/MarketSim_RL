@@ -2,7 +2,7 @@ import numpy as np
 from numpy.random import pareto
 import matplotlib.pyplot as plt
 from scipy.stats import beta, truncnorm
-from math import pi, sin, log
+from math import pi, sin, log10
 
 def generate_price(current_price, volatility=0.01, drift=0.01):
     ''' Generates a normal distribution with a drift% away from the current price then clips anything outside acceptable range back to current price
@@ -61,14 +61,20 @@ def get_max_variance(price, scale=0.1, decay_rate=0.25, amplitude=0.1, frequency
     10000__||  0.01000\n
     100000_||  0.00562
     '''
-    return scale * (price ** -decay_rate) * (1 + (amplitude * sin(frequency * log(price))))
+    return scale * (price ** -decay_rate) * (1 + (amplitude * sin(frequency * log10(price))))
 
 
 def beta_price(current_price, side, a=2, b=5):
     ''' Can be shaped to hug the current price without reaching it: [a > b: hugs lower end || a < b: hugs upper end]
         Has a nice distribution just a little past/before the current price is where most orders will be placed
     '''
-    max_variance = get_max_variance(current_price)
+    max_variance = get_max_variance(
+            current_price,
+            scale=0.05,
+            decay_rate=0.25,
+            amplitude=0.1,
+            frequency=pi*2
+        )
     epsilon = 0.000001  # Min possible price
     match side:
         case 'BID':
@@ -131,7 +137,7 @@ def truncated_price(current_price, side, volatility=0.001):
             return current_price * np.exp(log_return)
 
 
-current_price = 0.01
+current_price = 1.00
 
 buy_prices = [beta_price(current_price, 'BID') for _ in range(10000)]
 sell_prices = [beta_price(current_price, 'ASK') for _ in range(10000)]

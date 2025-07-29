@@ -1,6 +1,7 @@
 from math import pi, sin, log
 from scipy.stats import beta
 from Order.OrderAction import OrderAction
+from Util.Util import Util
 import logging
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 logger = logging.getLogger(__name__)
@@ -22,7 +23,7 @@ class Agent:
 
     def update_cash(self, amt):
         ''' Update the cash holdings of this agent [Negative amt decreses cash] '''
-        self.cash = round(self.cash + amt, 2)
+        self.cash = round(self.cash + amt, Util.ROUND_NDIGITS)
 
     def update_holdings(self, price, volume):
         ''' Update/add a share in the agent's holdings '''
@@ -126,16 +127,22 @@ class Agent:
             b = Higher favors left side (smaller x)\n
             epsilon = Minimum possible price (for bids only)\n
         '''
-        max_variance = self._get_max_variance(current_price)
+        max_variance = self._get_max_variance(
+            current_price,
+            scale=0.05,
+            decay_rate=0.25,
+            amplitude=0.1,
+            frequency=pi*2
+        )
         match side:
             case OrderAction.BID:
                 x = beta.rvs(a, b)
                 discount = x * max_variance
-                return max(current_price * (1 - discount), epsilon)
+                return round(max(current_price * (1 - discount), epsilon), Util.ROUND_NDIGITS)
             case OrderAction.ASK:
                 x = beta.rvs(a, b)
                 premium = x * max_variance
-                return current_price * (1 + premium)
+                return round(current_price * (1 + premium), Util.ROUND_NDIGITS)
     
     def info(self):
         return f"""
