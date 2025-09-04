@@ -1,5 +1,6 @@
 from math import pi, sin, log
 from scipy.stats import beta
+from Order.Order import Order
 from Order.OrderAction import OrderAction
 from Util.Util import Util
 import logging
@@ -12,14 +13,16 @@ class Agent:
     - id -> Agent's unique id
     - cash -> Amount of liquid cash available to the agent
     - holdings -> Current shares held and available to the agent -> {price: volume}
+    - active_asks, active_bids -> Active orders in the market -> {order_id: Order}
+    - history -> All orders that were placed on the market -> {order_id: Order}
     '''
     def __init__(self, id, cash=100):
-        self.id = id
-        self.cash = cash
-        self.holdings = {}
-        self.active_asks = {}
-        self.active_bids = {}
-        self.history = {}
+        self.id: str = id
+        self.cash: float = cash
+        self.holdings: dict[float, int] = {}
+        self.active_asks: dict[str, Order] = {}
+        self.active_bids: dict[str, Order] = {}
+        self.history: dict[str, Order] = {}
 
     def reset(self, cash=100):
         ''' Resets the agent to its initial state '''
@@ -82,10 +85,16 @@ class Agent:
         self.active_bids[order.id] = order
 
     def remove_active_ask(self, order_id):
-        self.active_asks.pop(order_id)
+        try:
+            del self.active_asks[order_id]
+        except KeyError:
+            logger.error(f'Active order does not exist to delete with ID: {order_id}')
 
     def remove_active_bid(self, order_id):
-        self.active_bids.pop(order_id)
+        try:
+            del self.active_bids[order_id]
+        except KeyError:
+            logger.error(f'Active order does not exist to delete with ID: {order_id}')
 
     def get_highest_value_share(self):
         ''' Get the most valuble share and volume from agent's holdings
@@ -106,11 +115,7 @@ class Agent:
         return (lowest_price, volume)
 
     def get_total_shares(self):
-        total_shares = 0
-        for holding in self.holdings.keys():
-            total_shares += self.holdings[holding]
-        
-        return total_shares
+        return sum(self.holdings.values())
 
     def _get_max_variance(self, price, scale=0.1, decay_rate=0.25, amplitude=0.1, frequency=pi*2):
         '''
@@ -167,7 +172,7 @@ class Agent:
     ACTIVE_ASKS: {self.active_asks}
     ACTIVE_BIDS: {self.active_bids}
     HISTORY: 
-        {'- '.join(f'{key}: {value.info()}' for key, value in last_items)}
+        {'- '.join(f'{id}: {order.info()}' for id, order in last_items)}
 =======================================================
             """
 
