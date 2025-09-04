@@ -21,6 +21,19 @@ class Agent:
         self.active_bids = {}
         self.history = {}
 
+    def reset(self, cash=100):
+        ''' Resets the agent to its initial state '''
+        self.cash = cash
+        self.holdings.clear()
+        self.active_asks.clear()
+        self.active_bids.clear()
+        self.history.clear()
+
+    def holdings_to_list(self):
+        holdings_list = []
+        for price, volume in self.holdings.items():
+            holdings_list.append((price, volume))
+
     def update_cash(self, amt):
         ''' Update the cash holdings of this agent [Negative amt decreses cash] '''
         self.cash = round(self.cash + amt, Util.ROUND_NDIGITS)
@@ -145,15 +158,17 @@ class Agent:
                 return round(current_price * (1 + premium), Util.ROUND_NDIGITS)
     
     def info(self):
+        last_items = list(self.history.items())[-5:]  # get last 5 entries
         return f"""
 =======================================================
-        ID: {self.id}
-        CASH: {self.cash}
-        HOLDINGS: {self.holdings}
-        ACTIVE_ASKS: {self.active_asks}
-        ACTIVE_BIDS: {self.active_bids}
-        HISTORY: 
-          {',  '.join(f'{key}: {value.info()}' for key, value in self.history.items())}
+    ID: {self.id}
+    CASH: {self.cash}
+    HOLDINGS: {self.holdings}
+    ACTIVE_ASKS: {self.active_asks}
+    ACTIVE_BIDS: {self.active_bids}
+    HISTORY: 
+        {'- '.join(f'{key}: {value.info()}' for key, value in last_items)}
 =======================================================
-        """
+            """
+
 

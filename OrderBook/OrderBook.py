@@ -44,6 +44,13 @@ class OrderBook:
             self.order_history = {}
             self.agents = {}
 
+    def reset(self, initial_price=1.00):
+        ''' Resets the orderbook to its initial state '''
+        self.current_price = initial_price
+        self.bid_queue = PriorityQueue()
+        self.ask_queue = PriorityQueue()
+        self.order_history.clear()
+
     def get_id(self, id_type):
         new_id = ''
         match id_type:
@@ -71,6 +78,9 @@ class OrderBook:
             
     def upsert_agent(self, agent: Agent):
         self.agents[agent.id] = agent
+    
+    def get_agent_by_id(self, agent_id: str):
+        return self.agents[agent_id]
         
     def get_best(self, side: OrderAction):
         ''' Get the best active bid/ask limit order and remove it from the queue 
@@ -208,6 +218,7 @@ class OrderBook:
 
     def _find_order_in_queue(self, order_id) -> tuple:
         order: Order = self.order_history[order_id]
+        matched = ()
 
         requeue = []
         match order.side:
@@ -217,7 +228,8 @@ class OrderBook:
                     o = self.get_best(order.side)
                     try:
                         if o[3] == order_id:
-                            return o
+                            matched = o
+                            break
                         else:
                             requeue.append(o) 
                     except KeyError as e:
@@ -230,7 +242,8 @@ class OrderBook:
                     o = self.get_best(order.side)
                     try:
                         if o[3] == order_id:
-                            return o
+                            matched = o
+                            break
                         else:
                             requeue.append(o)
                     except KeyError as e:
@@ -239,7 +252,7 @@ class OrderBook:
                     self._add_to_queue(order.side, item)
             case _:
                 log.error(f'INVALID SIDE VALUE @ OrderBook._remove_from_queue(side, info_tuple, order_id): {order.side}')
-                return ()
+        return matched
 
     def get_snapshot(self, depth=10):
         '''

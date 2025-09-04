@@ -16,6 +16,7 @@ class MatchMaker:
         assert(order.side is OrderAction.BID)
 
         ba: Agent = ob.agents[order.agent_id]
+        prices = []
 
         while order.volume > 0 and not ob.ask_queue.empty():
             # Prevent agent from trading with itself
@@ -55,6 +56,7 @@ class MatchMaker:
 
                 ob.fill_order(aa_order)
                 ob.current_price = aa_order.price
+                prices.append(aa_order.price)
 
             else:
                 total_value = round(affordable_volume * aa_order.price, Util.ROUND_NDIGITS)
@@ -67,6 +69,7 @@ class MatchMaker:
 
                 ob.partial_fill_order(aa_order, affordable_volume)
                 ob.current_price = aa_order.price
+                prices.append(aa_order.price)
 
                 order.volume = 0
 
@@ -79,76 +82,11 @@ class MatchMaker:
         else:
             order.status = OrderStatus.CLOSED
 
+        avg_price = (sum(prices) / len(prices)) if len(prices) > 0 else -1
+        order.price = avg_price
+
         ba.history[order.id] = order
         ob.upsert_agent(ba)
-
-
-    #def match_market_bid(self, ob: OrderBook, order: Order):
-    #    assert(order.side is OrderAction.BID)
-    #    # Bidding agent
-    #    ba: Agent = ob.agents[order.agent_id]
-#
-    #    # Match until there are no more matches available or order volume is depleted
-    #    while order.volume > 0 and not ob.ask_queue.empty():
-    #        # Prevent agent trading with itself
-    #        if ob.peek_best(OrderAction.ASK)[0][3] == ba.id: print('skipping');continue
-    #            
-    #        best_ask = ob.get_best(OrderAction.ASK)
-    #        if not best_ask: 
-    #            log.error('BEST ASK IS EMPTY! @ MatchMaker.match_market_bid()')
-    #            break
-#
-    #        best_ask_price = best_ask[0]
-    #        best_ask_time = best_ask[1]
-    #        best_ask_volume = best_ask[2]
-    #        best_ask_oid = best_ask[3]
-#
-    #        # Asking agent
-    #        aa_id = ob.order_history[best_ask_oid].agent_id
-    #        aa: Agent = ob.agents[aa_id]
-    #        aa_order: Order = aa.history[best_ask_oid]
-#
-    #        if aa_order.volume <= order.volume:
-    #            aa_order_total_value = round(aa_order.volume * aa_order.price, Util.ROUND_NDIGITS)
-    #            aa.update_cash(aa_order_total_value)
-    #            aa.remove_active_ask(aa_order.id)
-    #            aa_order.status = OrderStatus.CLOSED
-    #            aa.history[aa_order.id] = aa_order
-#
-    #            ba.update_holdings(aa_order.price, aa_order.volume)
-    #            ba.update_cash(-aa_order_total_value)
-#
-    #            order.volume = round(order.volume - aa_order.volume, Util.ROUND_NDIGITS)
-#
-    #            ob.fill_order(aa_order)
-    #            ob.current_price = aa_order.price
-    #            ob.upsert_agent(ba)
-    #            ob.upsert_agent(aa)
- #
-    #        else:
-    #            order_total_value = round(order.volume * aa_order.price, Util.ROUND_NDIGITS)
-    #            aa.update_cash(order_total_value)
-    #            aa.upsert_active_ask(aa_order)
-    #            
-    #            ba.update_holdings(aa_order.price, order.volume)
-    #            ba.update_cash(-order_total_value)
-    #            order.status = OrderStatus.CLOSED
-    #            ba.history[order.id] = order
-    #            
-    #            ob.partial_fill_order(aa_order, order.volume)
-    #            ob.current_price = aa_order.price
-    #            ob.upsert_agent(ba)
-    #            ob.upsert_agent(aa)
-#
-    #            order.volume = 0
-    #            
-    #    if order.volume > 0:
-    #        order.status = OrderStatus.CANCELED
-    #    else:
-    #        order.status = OrderStatus.CLOSED
-    #    
-    #    ba.history[order.id] = order
-    #    ob.upsert_agent(ba)
 
     def match_limit_bid(self, ob: OrderBook, order: Order):
         assert(order.side is OrderAction.BID)
@@ -220,6 +158,7 @@ class MatchMaker:
         assert(order.side is OrderAction.ASK)
         # Asking agent
         aa: Agent = ob.agents[order.agent_id]
+        prices = []
         
         while order.volume > 0 and not ob.bid_queue.empty():
             # Prevent agent trading with itself
@@ -253,6 +192,7 @@ class MatchMaker:
 
                 ob.fill_order(ba_order)
                 ob.current_price = ba_order.price
+                prices.append(ba_order.price)
                 ob.upsert_agent(aa)
                 ob.upsert_agent(ba)
 
@@ -265,6 +205,7 @@ class MatchMaker:
 
                 ob.partial_fill_order(ba_order, order.volume)
                 ob.current_price = ba_order.price
+                prices.append(ba_order.price)
                 ob.upsert_agent(ba)
                 ob.upsert_agent(aa)
 
@@ -276,6 +217,9 @@ class MatchMaker:
         else:
             order.status = OrderStatus.CLOSED
         
+        avg_price = (sum(prices) / len(prices)) if len(prices) > 0 else -1
+        order.price = avg_price
+
         aa.history[order.id] = order
         ob.upsert_agent(aa)
 

@@ -19,3 +19,11 @@ Thumbs.db
 
 # Workspace settings
 MarketSim.code-workspace
+
+# Models
+ML/ActorCritic/models
+ML/GeneticAlgorithm/models
+ML/ContinuousGeneticAlgorithm/models
+
+# Market Data for genetic algo
+ML/GeneticAlgorithm/market_data.json

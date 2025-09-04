@@ -5,8 +5,12 @@ import time
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 
-from random import randint
+from random import randint, randrange, uniform
 
+from numpy.matlib import rand
+
+from Order import Order
+from Order import OrderAction
 from OrderBook.OrderBook import OrderBook
 from Agent.NoiseAgent import NoiseAgent
 from Util.Util import Util
@@ -72,11 +76,19 @@ class OrderBookGUI:
 
 
     def init_agents(self, num_agents, agent_cash, maker_cash, maker_volume):
-        self.maker = NoiseAgent('MAKER', cash=maker_cash)
-        self.maker.update_holdings(self.ob.current_price, maker_volume)
-        self.ob.upsert_agent(self.maker)
+        #self.maker = NoiseAgent('MAKER', cash=maker_cash)
+        #self.maker.update_holdings(self.ob.current_price, maker_volume)
+        #maker_order = Order(
+        #    agent_id= self.maker.id,
+        #    side=OrderAction.ASK,
+        #    price=self.ob.current_price,
+        #    volume=maker_volume,
+        #)
+        #self.maker.upsert_active_ask(maker_order)
+        #self.ob.upsert_agent(self.maker)
         for _ in range(num_agents):
-            agent = NoiseAgent(self.ob.get_id('AGENT'), agent_cash)
+            agent = NoiseAgent(self.ob.get_id('AGENT'), randrange(10, 1000))
+            agent.update_holdings(self.ob.current_price, randint(1, num_agents * 10))
             self.ob.upsert_agent(agent)
 
     def setup_chart(self):
@@ -165,6 +177,7 @@ class OrderBookGUI:
         while True:
             if self.running:
                 for agent in self.ob.agents.values():
+                    if agent.id == 'MAKER': continue
                     agent.act(self.ob)
                 self.prices.append(self.ob.current_price)
             time.sleep(self.sleep_time)
