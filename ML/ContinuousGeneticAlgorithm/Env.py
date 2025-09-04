@@ -1,6 +1,7 @@
 import random
 import math
 from copy import deepcopy
+from time import time
 
 from Agent.TakerAgent import TakerAgent
 from Agent.NoiseAgent import NoiseAgent
@@ -96,6 +97,7 @@ class Env:
         running = True
         step = 0
         target_steps = 0
+        start_time = 0
 
         # Best agents Hall of Fame
         hof = []
@@ -106,6 +108,8 @@ class Env:
             if step >= target_steps:
                 step = 0
                 target_steps = 0
+                run_time = time() - start_time
+                print(f"RUN TIME: {run_time:.2f} seconds")
 
                 while choice not in (1, 8):
                     print('='*50)
@@ -121,6 +125,7 @@ class Env:
                             try:
                                 target_steps = int(input('Steps to go forward: '))
                                 if target_steps <= 0: raise ValueError(f'Invalid target_steps: {target_steps}')
+                                start_time = time()
                             except:
                                 target_steps = 1
                         # Print Snapshot
@@ -291,10 +296,10 @@ class Env:
                     # Get new state for each CGAA
                     state = self._get_state(cgaa)
                     action = cgaa.decide_action(state)
-                    if self.best_individual != None and cgaa.id == self.best_individual.id: print(action)
+                    #if self.best_individual != None and cgaa.id == self.best_individual.id: print(action)
                     cgaa.act(action, self.ob)
 
-                # Evolve every 10 steps
+                # Evolve every 1 day(in steps @ 1 min)
                 if step % 1440 == 0:
                     self._evolve()
                 step += 1

@@ -23,7 +23,7 @@ def trainCGA():
         _crossover_rate= 0.75,
         _ob= ob,
         _num_noise_agents= 250,
-        _version= 'v4'
+        _version= 'v5'
     )
     env.train()
 

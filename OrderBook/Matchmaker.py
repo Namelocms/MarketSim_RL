@@ -18,7 +18,7 @@ class MatchMaker:
         ba: Agent = ob.agents[order.agent_id]
         prices = []
 
-        while order.volume > 0 and not ob.ask_queue.empty():
+        while order.volume > 0 and ob.ask_queue:
             # Prevent agent from trading with itself
             if ob.peek_best(OrderAction.ASK)[0][3] == ba.id: continue
 
@@ -93,7 +93,7 @@ class MatchMaker:
         # Bidding agent
         ba: Agent = ob.agents[order.agent_id]
         
-        while not ob.ask_queue.empty() and ob.peek_best(OrderAction.ASK)[0][0] <= order.price and order.volume > 0:
+        while ob.ask_queue and ob.peek_best(OrderAction.ASK)[0][0] <= order.price and order.volume > 0:
             # Prevent agent trading with itself
             if ob.peek_best(OrderAction.ASK)[0][3] == ba.id: continue
 
@@ -160,7 +160,7 @@ class MatchMaker:
         aa: Agent = ob.agents[order.agent_id]
         prices = []
         
-        while order.volume > 0 and not ob.bid_queue.empty():
+        while order.volume > 0 and ob.bid_queue:
             # Prevent agent trading with itself
             if ob.peek_best(OrderAction.BID)[0][3] == aa.id: print('skipping');continue
 
@@ -228,9 +228,9 @@ class MatchMaker:
         # Asking Agent
         aa: Agent = ob.agents[order.agent_id]
 
-        while not ob.bid_queue.empty() and ob.peek_best(OrderAction.BID)[0][0] >= order.price and order.volume > 0:
+        while ob.bid_queue and ob.peek_best(OrderAction.BID)[0][0] >= order.price and order.volume > 0:
             # Prevent agent trading with itself
-            if ob.peek_best(OrderAction.BID)[0][3] == aa.id: print('skipping');continue
+            if ob.peek_best(OrderAction.BID)[0][3] == aa.id: continue
 
             best_bid = ob.get_best(OrderAction.BID)
             if not best_bid: 
